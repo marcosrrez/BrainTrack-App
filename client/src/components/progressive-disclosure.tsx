@@ -111,7 +111,7 @@ export function ProgressiveDisclosure({
                       <div className="flex items-center space-x-2">
                         <h4 className="font-medium text-neutral-800">{item.title}</h4>
                         <Badge className={getCategoryColor(item.category)} variant="secondary">
-                          {item.category.replace('-', ' ')}
+                          {item.category?.replace('-', ' ') || 'uncategorized'}
                         </Badge>
                         {item.importance === 'high' && (
                           <Badge className="bg-red-100 text-red-800" variant="secondary">
