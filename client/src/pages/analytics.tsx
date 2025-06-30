@@ -12,6 +12,38 @@ import {
   AlertCircle
 } from "lucide-react";
 import type { UserAnalytics, Memory } from "@shared/schema";
+import { ProgressiveDisclosure } from "@/components/ProgressiveDisclosure";
+
+const analyticsEducationItems = [
+  {
+    title: "Memory Retention Rate",
+    content: "This metric shows the percentage of memories you're able to successfully recall over time. A higher retention rate indicates better memory performance.",
+  },
+  {
+    title: "Review Consistency",
+    content: "This reflects how regularly you engage with the app for memory reviews. Consistency is key to reinforcing memories and improving long-term retention.",
+  },
+  {
+    title: "Average Recall Score",
+    content: "This is the average score you achieve on memory recall tests. It provides a snapshot of your overall memory strength.",
+  },
+  {
+    title: "TensorFlow AI Insights",
+    content: "Our AI algorithms analyze your memory patterns to provide personalized insights and recommendations for improvement.",
+  },
+  {
+    title: "Performance by Category",
+    content: "This shows how well you're performing in different categories of memories, helping you identify areas where you excel or need to focus more.",
+  },
+  {
+    title: "The Science of Memory",
+    content: "Memory retention is influenced by factors like sleep, nutrition, and stress. Optimize these areas to enhance your memory performance.",
+  },
+  {
+    title: "How We Use Your Data",
+    content: "We use your data to personalize your learning experience, provide tailored insights, and improve our AI algorithms. Your data is kept secure and private.",
+  },
+];
 
 export default function AnalyticsPage() {
   const { data: analytics, isLoading: analyticsLoading } = useQuery<UserAnalytics>({
@@ -51,7 +83,7 @@ export default function AnalyticsPage() {
 
   // Use AI-generated insights from the backend
   const aiInsights = (analytics as any)?.aiInsights || [];
-  
+
   // Convert AI insights to display format
   const insights = aiInsights.map((insight: any) => ({
     ...insight,
@@ -185,7 +217,7 @@ export default function AnalyticsPage() {
                   yellow: "bg-yellow-50 border-yellow-200 text-yellow-800",
                   red: "bg-red-50 border-red-200 text-red-800",
                 };
-                
+
                 return (
                   <div
                     key={index}
@@ -210,7 +242,7 @@ export default function AnalyticsPage() {
                   </div>
                 );
               })}
-              
+
               {(analytics as any)?.aiGeneratedAt && (
                 <div className="text-xs text-neutral-500 text-center pt-2 border-t">
                   AI analysis generated on {new Date((analytics as any).aiGeneratedAt).toLocaleString()}
@@ -232,7 +264,7 @@ export default function AnalyticsPage() {
               {Object.entries(categorizedMemories).map(([type, data]) => {
                 const percentage = (data.avgScore / 3) * 100;
                 const colorClass = percentage >= 80 ? "bg-green-500" : percentage >= 60 ? "bg-yellow-500" : "bg-red-500";
-                
+
                 return (
                   <div key={type} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -255,6 +287,15 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Educational Content */}
+      <ProgressiveDisclosure 
+        items={analyticsEducationItems}
+        title="Analytics Deep Dive"
+        subtitle="Understanding your memory data and AI-powered insights"
+        showProgress={true}
+        maxInitialItems={1}
+      />
     </div>
   );
 }

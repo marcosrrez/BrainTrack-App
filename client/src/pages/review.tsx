@@ -15,8 +15,12 @@ import {
   RotateCcw, 
   CheckCircle,
   Lightbulb,
-  Clock
+  Clock,
+  Brain,
+  Target,
+  TrendingUp
 } from "lucide-react";
+import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
 
 interface ReviewSession {
   memories: Memory[];
@@ -38,6 +42,96 @@ export default function ReviewPage() {
   
   const [reviewNotes, setReviewNotes] = useState("");
   const [elaborativeNotes, setElaborativeNotes] = useState("");
+
+  // Educational content for review page
+  const reviewEducationItems = [
+    {
+      id: 'active-recall',
+      title: 'The Power of Active Recall',
+      preview: 'Why testing yourself is more effective than re-reading',
+      category: 'memory-science' as const,
+      importance: 'high' as const,
+      icon: Brain,
+      content: (
+        <div className="space-y-3">
+          <p>
+            <strong>Active recall</strong> - trying to remember information without looking at it - is one of 
+            the most effective learning techniques, backed by extensive research.
+          </p>
+          <p>
+            When you attempt to recall a memory before viewing it, you strengthen the neural pathways 
+            more than passive review. This is why we ask you to think first, then watch.
+          </p>
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Pro Tip:</strong> Even if you can't remember everything perfectly, the act of trying 
+              to recall strengthens the memory for future reviews.
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'elaborative-notes',
+      title: 'Elaborative Processing',
+      preview: 'How connecting memories to other experiences strengthens them',
+      category: 'memory-science' as const,
+      importance: 'medium' as const,
+      icon: Target,
+      content: (
+        <div className="space-y-3">
+          <p>
+            <strong>Elaborative processing</strong> involves connecting new information to existing knowledge. 
+            The reflection questions help you build these connections.
+          </p>
+          <p>
+            When you connect a memory to other experiences, emotions, or knowledge, you create multiple 
+            retrieval pathways, making the memory more accessible and durable.
+          </p>
+          <div className="bg-green-50 p-3 rounded-lg">
+            <p className="text-sm text-green-800">
+              <strong>Your Notes:</strong> The connections you write become part of the memory record, 
+              helping you recall both the original experience and related insights.
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'difficulty-ratings',
+      title: 'Memory Difficulty Scoring',
+      preview: 'How your ratings optimize future review scheduling',
+      category: 'feature-explanation' as const,
+      importance: 'medium' as const,
+      icon: TrendingUp,
+      content: (
+        <div className="space-y-3">
+          <p>Your difficulty ratings directly influence when you'll see each memory again:</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-red-50 p-3 rounded-lg">
+              <div className="font-medium text-red-800">Again (0)</div>
+              <div className="text-sm text-red-700">Review in 1 day</div>
+            </div>
+            <div className="bg-yellow-50 p-3 rounded-lg">
+              <div className="font-medium text-yellow-800">Hard (1)</div>
+              <div className="text-sm text-yellow-700">Review in 3 days</div>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg">
+              <div className="font-medium text-green-800">Good (2)</div>
+              <div className="text-sm text-green-700">Review in 1-2 weeks</div>
+            </div>
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="font-medium text-blue-800">Easy (3)</div>
+              <div className="text-sm text-blue-700">Review in 1+ months</div>
+            </div>
+          </div>
+          <p className="text-sm text-neutral-600">
+            Be honest with your ratings - this helps the algorithm optimize your review schedule.
+          </p>
+        </div>
+      )
+    }
+  ];
 
   const { data: dueMemories, isLoading } = useQuery<Memory[]>({
     queryKey: ["/api/memories/due"],
@@ -403,6 +497,16 @@ export default function ReviewPage() {
           </>
         )}
       </Card>
+
+      {/* Educational Content - only show during review phase */}
+      {session.phase === 'review' && (
+        <ProgressiveDisclosure 
+          items={reviewEducationItems}
+          title="Review Science"
+          subtitle="Understanding the cognitive principles behind effective review"
+          maxInitialItems={1}
+        />
+      )}
     </div>
   );
 }

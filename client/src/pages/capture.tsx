@@ -19,16 +19,19 @@ import { insertMemorySchema, type InsertMemory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { 
-  Video, 
+  Camera, 
   Mic, 
   Square, 
   Play, 
   Save,
   FileText,
   Brain,
-  Eye
+  Eye,
+  Target,
+  Shield
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
 
 interface CaptureFormData {
   title: string;
@@ -56,6 +59,93 @@ export default function CapturePage() {
   const [facialAnalysis, setFacialAnalysis] = useState<FacialAnalysis | null>(null);
   const [emotionDetector] = useState(() => new FacialEmotionDetector());
   const [realTimeEmotions, setRealTimeEmotions] = useState<any[]>([]);
+  const [showAIResults, setShowAIResults] = useState(false);
+
+  // Educational content for capture page
+  const captureEducationItems = [
+    {
+      id: 'effective-capture',
+      title: 'Creating Effective Memory Captures',
+      preview: 'Tips for recording memories that will be easier to recall later',
+      category: 'feature-explanation' as const,
+      importance: 'high' as const,
+      icon: Camera,
+      content: (
+        <div className="space-y-3">
+          <p>
+            The quality of your memory capture affects how well you'll remember it later. 
+            Follow these evidence-based tips:
+          </p>
+          <ul className="space-y-2">
+            <li><strong>Be Specific:</strong> Include concrete details like who, what, where, when</li>
+            <li><strong>Add Emotion:</strong> Rate the emotional intensity - emotions strengthen memories</li>
+            <li><strong>Include Context:</strong> Mention what led to this moment and why it matters</li>
+            <li><strong>Use Multiple Senses:</strong> Video captures more context than audio alone</li>
+          </ul>
+        </div>
+      )
+    },
+    {
+      id: 'ai-analysis-privacy',
+      title: 'AI Analysis & Your Privacy',
+      preview: 'How our AI analyzes your memories while protecting your data',
+      category: 'data-usage' as const,
+      importance: 'high' as const,
+      icon: Shield,
+      content: (
+        <div className="space-y-3">
+          <p>Our AI analyzes your captures to enhance memory formation:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <h5 className="font-medium text-blue-800 mb-2">What We Analyze:</h5>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Emotional tone in voice</li>
+                <li>• Facial expressions</li>
+                <li>• Text sentiment</li>
+                <li>• Content themes</li>
+              </ul>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg">
+              <h5 className="font-medium text-green-800 mb-2">Privacy Protection:</h5>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Processing happens locally</li>
+                <li>• No data sharing</li>
+                <li>• Encrypted storage</li>
+                <li>• You control your data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'memory-types',
+      title: 'Memory Types & Their Benefits',
+      preview: 'Understanding personal, professional, and social memories',
+      category: 'memory-science' as const,
+      importance: 'medium' as const,
+      icon: Brain,
+      content: (
+        <div className="space-y-3">
+          <p>Different types of memories serve different cognitive functions:</p>
+          <div className="space-y-3">
+            <div className="border-l-4 border-blue-500 pl-3">
+              <strong className="text-blue-700">Personal Memories:</strong> Build self-identity and emotional well-being
+            </div>
+            <div className="border-l-4 border-green-500 pl-3">
+              <strong className="text-green-700">Professional Memories:</strong> Enhance learning and skill development
+            </div>
+            <div className="border-l-4 border-purple-500 pl-3">
+              <strong className="text-purple-700">Social Memories:</strong> Strengthen relationships and social bonds
+            </div>
+          </div>
+          <p className="text-sm text-neutral-600">
+            Diversifying your memory types creates a richer, more resilient memory network.
+          </p>
+        </div>
+      )
+    }
+  ];
 
   const form = useForm<CaptureFormData>({
     resolver: zodResolver(insertMemorySchema.omit({ userId: true, videoData: true, audioData: true, tags: true }).extend({
@@ -581,6 +671,14 @@ export default function CapturePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Educational Content */}
+      <ProgressiveDisclosure 
+        items={captureEducationItems}
+        title="Memory Capture Guide"
+        subtitle="Learn how to create more memorable and effective captures"
+        maxInitialItems={1}
+      />
     </div>
   );
 }

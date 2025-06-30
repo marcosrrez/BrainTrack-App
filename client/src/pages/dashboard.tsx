@@ -17,6 +17,32 @@ import {
 } from "lucide-react";
 import type { Memory, UserAnalytics } from "@shared/schema";
 import { getMemoriesOnThisDay } from "@/lib/spaced-repetition";
+import { ProgressiveDisclosure } from "@/components/progressive-disclosure"; // Ensure this component exists
+
+// Define educational items
+const dashboardEducationItems = [
+  {
+    title: "Welcome to MemoryBoost!",
+    content: "MemoryBoost is designed to help you enhance your memory using spaced repetition and other techniques.",
+  },
+  {
+    title: "The Science of Spaced Repetition",
+    content: "Spaced repetition involves reviewing information at increasing intervals. This technique leverages the forgetting curve to optimize memory retention.",
+  },
+  {
+    title: "How MemoryBoost Uses Your Data",
+    content: "MemoryBoost analyzes your performance to personalize your review schedule. This ensures you review memories when they're most likely to be forgotten, maximizing learning efficiency.",
+  },
+  {
+    title: "Tracking Your Progress",
+    content: "Monitor your review streak and accuracy rate to track your memory enhancement journey. Consistent effort leads to better results!",
+  },
+  {
+    title: "Capture New Memories Regularly",
+    content: "The more memories you capture, the more you'll benefit from the spaced repetition system. Make it a habit to record new video and audio memories.",
+  },
+];
+
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -228,6 +254,15 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Educational Content */}
+      <ProgressiveDisclosure 
+        items={dashboardEducationItems}
+        title="Understanding MemoryBoost"
+        subtitle="Learn about the science behind your memory enhancement"
+        showProgress={true}
+        maxInitialItems={1}
+      />
     </div>
   );
 }
