@@ -49,70 +49,21 @@ export default function AnalyticsPage() {
     return acc;
   }, {} as Record<string, { count: number; totalScore: number; avgScore: number }>) || {};
 
-  // Generate insights based on data
-  const generateInsights = () => {
-    const insights = [];
-    
-    if (analytics) {
-      if (analytics.accuracyRate < 75) {
-        insights.push({
-          type: 'improvement',
-          title: 'Improvement Opportunity',
-          description: 'Your recall accuracy could be improved. Try adding more sensory details when capturing memories.',
-          icon: Lightbulb,
-          color: 'blue',
-        });
-      } else if (analytics.accuracyRate > 90) {
-        insights.push({
-          type: 'success',
-          title: 'Excellent Performance',
-          description: 'Your recall accuracy is outstanding! Keep up the great memory practice.',
-          icon: Trophy,
-          color: 'green',
-        });
-      }
-
-      if (analytics.reviewStreak > 7) {
-        insights.push({
-          type: 'success',
-          title: 'Great Consistency',
-          description: `You've maintained a ${analytics.reviewStreak}-day review streak. Consistency is key to memory improvement!`,
-          icon: Calendar,
-          color: 'green',
-        });
-      } else if (analytics.reviewStreak < 3) {
-        insights.push({
-          type: 'reminder',
-          title: 'Consistency Reminder',
-          description: 'Try to review memories daily to maximize retention. Even 5 minutes can make a difference.',
-          icon: AlertCircle,
-          color: 'yellow',
-        });
-      }
-
-      // Category-specific insights
-      const categoryEntries = Object.entries(categorizedMemories);
-      if (categoryEntries.length > 1) {
-        const sortedCategories = categoryEntries.sort((a, b) => b[1].avgScore - a[1].avgScore);
-        const bestCategory = sortedCategories[0];
-        const worstCategory = sortedCategories[sortedCategories.length - 1];
-        
-        if (bestCategory[1].avgScore - worstCategory[1].avgScore > 0.5) {
-          insights.push({
-            type: 'improvement',
-            title: 'Category Performance Gap',
-            description: `Your ${bestCategory[0]} memories perform better than ${worstCategory[0]} ones. Consider applying similar techniques across categories.`,
-            icon: TrendingUp,
-            color: 'blue',
-          });
-        }
-      }
-    }
-
-    return insights;
-  };
-
-  const insights = generateInsights();
+  // Use AI-generated insights from the backend
+  const aiInsights = (analytics as any)?.aiInsights || [];
+  
+  // Convert AI insights to display format
+  const insights = aiInsights.map((insight: any) => ({
+    ...insight,
+    icon: insight.type === 'improvement' ? Lightbulb :
+          insight.type === 'pattern' ? TrendingUp :
+          insight.type === 'strength' ? Trophy :
+          insight.type === 'recommendation' ? AlertCircle : Brain,
+    color: insight.type === 'improvement' ? 'blue' :
+           insight.type === 'pattern' ? 'green' :
+           insight.type === 'strength' ? 'green' :
+           insight.type === 'recommendation' ? 'yellow' : 'blue',
+  }));
 
   return (
     <div className="space-y-8 pb-20 md:pb-8">
@@ -212,18 +163,21 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* AI-Generated Insights */}
+      {/* TensorFlow AI-Generated Insights */}
       {insights.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Lightbulb className="w-5 h-5 mr-2" />
-              AI-Generated Insights
+              <Brain className="w-5 h-5 mr-2" />
+              TensorFlow AI Insights
             </CardTitle>
+            <p className="text-sm text-neutral-600 mt-1">
+              Powered by machine learning analysis of your memory patterns
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {insights.map((insight, index) => {
+              {insights.map((insight: any, index: number) => {
                 const Icon = insight.icon;
                 const colorClasses = {
                   blue: "bg-blue-50 border-blue-200 text-blue-800",
@@ -241,14 +195,27 @@ export default function AnalyticsPage() {
                       <div className="w-8 h-8 bg-white/50 rounded-full flex items-center justify-center mt-1 flex-shrink-0">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div>
-                        <h4 className="font-medium mb-1">{insight.title}</h4>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-medium">{insight.title}</h4>
+                          {insight.confidence && (
+                            <span className="text-xs opacity-70">
+                              {Math.round(insight.confidence * 100)}% confidence
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm opacity-90">{insight.description}</p>
                       </div>
                     </div>
                   </div>
                 );
               })}
+              
+              {(analytics as any)?.aiGeneratedAt && (
+                <div className="text-xs text-neutral-500 text-center pt-2 border-t">
+                  AI analysis generated on {new Date((analytics as any).aiGeneratedAt).toLocaleString()}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

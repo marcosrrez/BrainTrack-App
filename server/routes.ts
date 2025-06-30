@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { aiService } from "./ai-service";
 import { loginSchema, registerSchema, insertMemorySchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
@@ -167,12 +168,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.session.userId,
       });
 
-      const memory = await storage.createMemory(memoryData);
-      res.json(memory);
+      // Analyze the memory content using TensorFlow AI
+      const [textAnalysis, emotionAnalysis] = await Promise.all([
+        aiService.analyzeText(memoryData.description),
+        aiService.analyzeEmotion(memoryData.description, memoryData.emotion),
+      ]);
+
+      // Enhance memory data with AI insights
+      const enhancedMemoryData = {
+        ...memoryData,
+        sentimentScore: textAnalysis.sentiment,
+        aiSuggestedTags: textAnalysis.keywords,
+        transcribedAudio: null, // Will be populated later if audio processing is added
+      };
+
+      const memory = await storage.createMemory(enhancedMemoryData);
+      
+      // Return memory with AI analysis
+      res.json({
+        ...memory,
+        aiAnalysis: {
+          textAnalysis,
+          emotionAnalysis,
+        },
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
+      console.error('Memory creation error:', error);
       res.status(500).json({ message: "Failed to create memory" });
     }
   });
@@ -225,24 +249,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Memory not found" });
       }
 
-      // Calculate next review date using spaced repetition
+      // Calculate next review date using AI-optimized spaced repetition
       const now = new Date();
       const reviewCount = memory.reviewCount + 1;
-      let intervalDays = 1;
-
-      // Simple spaced repetition algorithm
+      
+      // Get user analytics for AI optimization
+      const userAnalytics = await storage.getUserAnalytics(req.session.userId!);
+      
+      // Use TensorFlow AI to optimize the review interval
+      const optimizedInterval = await aiService.optimizeReviewInterval(memory, userAnalytics);
+      
+      // Apply the AI-optimized interval with score adjustment
+      let intervalDays = optimizedInterval;
       switch (score) {
-        case 0: // Again
+        case 0: // Again - override with shorter interval
           intervalDays = 1;
           break;
-        case 1: // Hard
-          intervalDays = Math.max(1, Math.floor(reviewCount * 0.5));
+        case 1: // Hard - reduce interval
+          intervalDays = Math.max(1, Math.floor(intervalDays * 0.7));
           break;
-        case 2: // Good
-          intervalDays = Math.max(1, reviewCount * 2);
+        case 2: // Good - use AI prediction
+          intervalDays = intervalDays;
           break;
-        case 3: // Easy
-          intervalDays = Math.max(1, reviewCount * 4);
+        case 3: // Easy - extend interval
+          intervalDays = Math.floor(intervalDays * 1.5);
           break;
       }
 
@@ -276,13 +306,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics routes
   app.get("/api/analytics", requireAuth, async (req, res) => {
     try {
-      const analytics = await storage.getUserAnalytics(req.session.userId);
+      const analytics = await storage.getUserAnalytics(req.session.userId!);
       if (!analytics) {
         return res.status(404).json({ message: "Analytics not found" });
       }
-      res.json(analytics);
+
+      // Get user memories for AI analysis
+      const memories = await storage.getMemoriesByUser(req.session.userId!);
+      
+      // Generate AI-powered insights
+      const aiInsights = await aiService.generateInsights(memories, analytics);
+      
+      // Enhanced analytics with AI insights
+      const enhancedAnalytics = {
+        ...analytics,
+        aiInsights,
+        aiGeneratedAt: new Date(),
+      };
+
+      res.json(enhancedAnalytics);
     } catch (error) {
+      console.error('Analytics error:', error);
       res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // AI-powered similar memories endpoint
+  app.get("/api/memories/:id/similar", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const targetMemory = await storage.getMemory(id);
+      
+      if (!targetMemory || targetMemory.userId !== req.session.userId) {
+        return res.status(404).json({ message: "Memory not found" });
+      }
+
+      const allMemories = await storage.getMemoriesByUser(req.session.userId!);
+      const similarMemories = await aiService.findSimilarMemories(targetMemory, allMemories);
+      
+      res.json(similarMemories);
+    } catch (error) {
+      console.error('Similar memories error:', error);
+      res.status(500).json({ message: "Failed to find similar memories" });
     }
   });
 
