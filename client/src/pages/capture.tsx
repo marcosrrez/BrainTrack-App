@@ -17,6 +17,7 @@ import { FacialEmotionDetector, type FacialAnalysis } from "@/lib/facial-emotion
 import { apiRequest } from "@/lib/queryClient";
 import { insertMemorySchema, type InsertMemory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 import { 
   Video, 
   Mic, 
@@ -57,10 +58,8 @@ export default function CapturePage() {
   const [realTimeEmotions, setRealTimeEmotions] = useState<any[]>([]);
 
   const form = useForm<CaptureFormData>({
-    resolver: zodResolver(insertMemorySchema.omit({ userId: true, videoData: true, audioData: true }).extend({
-      tags: insertMemorySchema.shape.tags.transform(val => val || []).pipe(
-        insertMemorySchema.shape.tags.refine(() => true)
-      ).or(insertMemorySchema.shape.tags.transform((val: string) => val.split(',').map(t => t.trim()).filter(Boolean)))
+    resolver: zodResolver(insertMemorySchema.omit({ userId: true, videoData: true, audioData: true, tags: true }).extend({
+      tags: z.string().optional()
     })),
     defaultValues: {
       title: "",
