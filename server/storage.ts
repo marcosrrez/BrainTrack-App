@@ -1,4 +1,6 @@
 import { users, memories, userAnalytics, type User, type InsertUser, type Memory, type InsertMemory, type UserAnalytics, type InsertUserAnalytics } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -22,44 +24,29 @@ export interface IStorage {
   updateUserAnalytics(userId: number, updates: Partial<UserAnalytics>): Promise<UserAnalytics | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private memories: Map<number, Memory>;
-  private userAnalytics: Map<number, UserAnalytics>;
-  private currentUserId: number;
-  private currentMemoryId: number;
-  private currentAnalyticsId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.memories = new Map();
-    this.userAnalytics = new Map();
-    this.currentUserId = 1;
-    this.currentMemoryId = 1;
-    this.currentAnalyticsId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const id = this.currentUserId++;
-    const user: User = {
-      ...insertUser,
-      id,
-      password: hashedPassword,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        password: hashedPassword,
+      })
+      .returning();
 
     // Create initial analytics record
-    await this.createUserAnalytics({ userId: id });
+    await this.createUserAnalytics({ userId: user.id });
 
     return user;
   }
@@ -69,39 +56,47 @@ export class MemStorage implements IStorage {
   }
 
   async getMemory(id: number): Promise<Memory | undefined> {
-    return this.memories.get(id);
+    const [memory] = await db.select().from(memories).where(eq(memories.id, id));
+    return memory || undefined;
   }
 
   async getMemoriesByUser(userId: number): Promise<Memory[]> {
-    return Array.from(this.memories.values())
-      .filter(memory => memory.userId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return await db
+      .select()
+      .from(memories)
+      .where(eq(memories.userId, userId))
+      .orderBy(memories.createdAt);
   }
 
   async getMemoriesDueForReview(userId: number): Promise<Memory[]> {
     const now = new Date();
-    return Array.from(this.memories.values())
-      .filter(memory => memory.userId === userId && new Date(memory.nextReview) <= now)
-      .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime());
+    const { and, lte } = await import("drizzle-orm");
+    return await db
+      .select()
+      .from(memories)
+      .where(and(
+        eq(memories.userId, userId),
+        lte(memories.nextReview, now)
+      ))
+      .orderBy(memories.nextReview);
   }
 
   async createMemory(insertMemory: InsertMemory): Promise<Memory> {
-    const id = this.currentMemoryId++;
     const now = new Date();
-    const memory: Memory = {
-      ...insertMemory,
-      id,
-      nextReview: now,
-      reviewCount: 0,
-      lastScore: 0,
-      reviewHistory: [],
-      transcribedAudio: null,
-      sentimentScore: null,
-      aiSuggestedTags: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.memories.set(id, memory);
+    const [memory] = await db
+      .insert(memories)
+      .values({
+        ...insertMemory,
+        location: insertMemory.location || null,
+        nextReview: now,
+        reviewCount: 0,
+        lastScore: 0,
+        reviewHistory: [],
+        transcribedAudio: null,
+        sentimentScore: null,
+        aiSuggestedTags: [],
+      })
+      .returning();
 
     // Update user analytics
     await this.updateAnalyticsAfterMemoryCreation(insertMemory.userId);
@@ -110,63 +105,65 @@ export class MemStorage implements IStorage {
   }
 
   async updateMemory(id: number, updates: Partial<Memory>): Promise<Memory | undefined> {
-    const memory = this.memories.get(id);
-    if (!memory) return undefined;
-
-    const updatedMemory: Memory = {
-      ...memory,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.memories.set(id, updatedMemory);
-    return updatedMemory;
+    const [memory] = await db
+      .update(memories)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(memories.id, id))
+      .returning();
+    
+    return memory || undefined;
   }
 
   async deleteMemory(id: number): Promise<boolean> {
-    const memory = this.memories.get(id);
+    const memory = await this.getMemory(id);
     if (!memory) return false;
 
-    this.memories.delete(id);
+    await db.delete(memories).where(eq(memories.id, id));
     await this.updateAnalyticsAfterMemoryDeletion(memory.userId);
     return true;
   }
 
   async getUserAnalytics(userId: number): Promise<UserAnalytics | undefined> {
-    return Array.from(this.userAnalytics.values()).find(
-      analytics => analytics.userId === userId
-    );
+    const [analytics] = await db
+      .select()
+      .from(userAnalytics)
+      .where(eq(userAnalytics.userId, userId));
+    return analytics || undefined;
   }
 
   async createUserAnalytics(insertAnalytics: InsertUserAnalytics): Promise<UserAnalytics> {
-    const id = this.currentAnalyticsId++;
-    const analytics: UserAnalytics = {
-      ...insertAnalytics,
-      id,
-      totalMemories: 0,
-      dueForReview: 0,
-      reviewStreak: 0,
-      accuracyRate: 0,
-      retentionRates: {},
-      reviewConsistency: 0,
-      avgRecallScore: 0,
-      insights: [],
-      updatedAt: new Date(),
-    };
-    this.userAnalytics.set(id, analytics);
+    const [analytics] = await db
+      .insert(userAnalytics)
+      .values({
+        ...insertAnalytics,
+        totalMemories: 0,
+        dueForReview: 0,
+        reviewStreak: 0,
+        accuracyRate: 0,
+        retentionRates: {},
+        reviewConsistency: 0,
+        avgRecallScore: 0,
+        insights: [],
+      })
+      .returning();
+    
     return analytics;
   }
 
   async updateUserAnalytics(userId: number, updates: Partial<UserAnalytics>): Promise<UserAnalytics | undefined> {
-    let analytics = await this.getUserAnalytics(userId);
-    if (!analytics) return undefined;
-
-    const updatedAnalytics: UserAnalytics = {
-      ...analytics,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.userAnalytics.set(analytics.id, updatedAnalytics);
-    return updatedAnalytics;
+    const [analytics] = await db
+      .update(userAnalytics)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(userAnalytics.userId, userId))
+      .returning();
+    
+    return analytics || undefined;
   }
 
   private async updateAnalyticsAfterMemoryCreation(userId: number): Promise<void> {
@@ -190,4 +187,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

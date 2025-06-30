@@ -6,6 +6,12 @@ import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
 
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+  }
+}
+
 const MemoryStoreSession = MemoryStore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {

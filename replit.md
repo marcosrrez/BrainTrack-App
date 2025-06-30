@@ -114,7 +114,8 @@ MemoryBoost is a full-stack cognitive enhancement application designed to improv
 - Database schema pushed using drizzle-kit migrations
 
 ## Changelog
-- June 30, 2025. Initial setup
+- June 30, 2025: Initial setup with in-memory storage
+- June 30, 2025: Migrated from in-memory storage to PostgreSQL database with persistent data storage
 
 ## User Preferences
 
