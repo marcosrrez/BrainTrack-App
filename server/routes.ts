@@ -130,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Memory routes
   app.get("/api/memories", requireAuth, async (req, res) => {
     try {
-      const memories = await storage.getMemoriesByUser(req.session.userId);
+      const memories = await storage.getMemoriesByUser(req.session.userId!);
       res.json(memories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch memories" });
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/memories/due", requireAuth, async (req, res) => {
     try {
-      const memories = await storage.getMemoriesDueForReview(req.session.userId);
+      const memories = await storage.getMemoriesDueForReview(req.session.userId!);
       res.json(memories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch due memories" });
@@ -169,10 +169,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Analyze the memory content using TensorFlow AI
-      const [textAnalysis, emotionAnalysis] = await Promise.all([
-        aiService.analyzeText(memoryData.description),
-        aiService.analyzeEmotion(memoryData.description, memoryData.emotion),
-      ]);
+      const textAnalysis = await aiService.analyzeText(memoryData.description);
+      const emotionAnalysis = await aiService.analyzeEmotion(memoryData.description, memoryData.emotion);
+      
+      // Add voice analysis if audio data is present
+      let voiceAnalysis = null;
+      if (memoryData.audioData) {
+        voiceAnalysis = await aiService.analyzeVoiceTone(memoryData.audioData);
+      }
 
       // Enhance memory data with AI insights
       const enhancedMemoryData = {
@@ -190,6 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiAnalysis: {
           textAnalysis,
           emotionAnalysis,
+          voiceAnalysis,
         },
       });
     } catch (error) {

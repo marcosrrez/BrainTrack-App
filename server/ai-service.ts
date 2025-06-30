@@ -13,6 +13,21 @@ export interface EmotionAnalysis {
   intensity: number;
 }
 
+export interface VoiceAnalysis {
+  tone: {
+    confident: number;
+    anxious: number;
+    excited: number;
+    calm: number;
+    stressed: number;
+  };
+  pace: number; // 0-1 (slow to fast)
+  energy: number; // 0-1 (low to high)
+  clarity: number; // 0-1 (unclear to clear)
+  dominantTone: string;
+  confidence: number;
+}
+
 export interface TextAnalysis {
   sentiment: number; // -1 to 1
   keywords: string[];
@@ -72,6 +87,66 @@ class TensorFlowAIService {
       complexity,
       emotionalTone,
     };
+  }
+
+  /**
+   * Analyze voice tone from audio data (base64 encoded)
+   */
+  async analyzeVoiceTone(audioData: string): Promise<VoiceAnalysis> {
+    // In a real implementation, this would use audio processing libraries
+    // For now, we'll simulate voice analysis based on audio characteristics
+    
+    try {
+      // Decode base64 audio data for analysis
+      const audioBuffer = Buffer.from(audioData.split(',')[1] || audioData, 'base64');
+      
+      // Simulate audio feature extraction
+      const features = this.extractAudioFeatures(audioBuffer);
+      
+      const tone = {
+        confident: this.calculateConfidence(features),
+        anxious: this.calculateAnxiety(features),
+        excited: this.calculateExcitement(features),
+        calm: this.calculateCalmness(features),
+        stressed: this.calculateStress(features),
+      };
+
+      // Normalize tone values
+      const total = Object.values(tone).reduce((sum, val) => sum + val, 0);
+      const normalizedTone = Object.fromEntries(
+        Object.entries(tone).map(([key, val]) => [key, val / Math.max(total, 1)])
+      );
+
+      const dominantTone = Object.entries(normalizedTone)
+        .reduce((a, b) => normalizedTone[a[0]] > normalizedTone[b[0]] ? a : b)[0];
+
+      return {
+        tone: normalizedTone as VoiceAnalysis['tone'],
+        pace: this.calculatePace(features),
+        energy: this.calculateEnergy(features),
+        clarity: this.calculateClarity(features),
+        dominantTone,
+        confidence: normalizedTone[dominantTone],
+      };
+    } catch (error) {
+      console.error('Voice analysis error:', error);
+      
+      // Return neutral analysis on error
+      return {
+        tone: {
+          confident: 0.2,
+          anxious: 0.2,
+          excited: 0.2,
+          calm: 0.2,
+          stressed: 0.2,
+        },
+        pace: 0.5,
+        energy: 0.5,
+        clarity: 0.5,
+        dominantTone: 'calm',
+        confidence: 0.2,
+      };
+    }
   }
 
   /**
@@ -428,6 +503,66 @@ class TensorFlowAIService {
       patterns[timeSlot] = (patterns[timeSlot] || 0) + 1;
     });
     return patterns;
+  }
+
+  private extractAudioFeatures(audioBuffer: Buffer): any {
+    // Simulate audio feature extraction
+    // In a real implementation, this would use FFT, MFCC, etc.
+    const length = audioBuffer.length;
+    const amplitude = Array.from(audioBuffer.slice(0, Math.min(1000, length)))
+      .reduce((sum, val) => sum + Math.abs(val - 128), 0) / Math.min(1000, length);
+    
+    const variance = Array.from(audioBuffer.slice(0, Math.min(1000, length)))
+      .reduce((sum, val) => sum + Math.pow(val - 128, 2), 0) / Math.min(1000, length);
+    
+    return {
+      amplitude,
+      variance,
+      length,
+      highFreqEnergy: Math.random() * amplitude, // Simulated
+      lowFreqEnergy: Math.random() * amplitude,  // Simulated
+      spectralRolloff: Math.random() * 0.8 + 0.2, // Simulated
+    };
+  }
+
+  private calculateConfidence(features: any): number {
+    // High amplitude and low variance often indicate confidence
+    return Math.min(1, (features.amplitude / 50) * (1 - features.variance / 1000));
+  }
+
+  private calculateAnxiety(features: any): number {
+    // High variance and irregular patterns suggest anxiety
+    return Math.min(1, features.variance / 800 + Math.random() * 0.2);
+  }
+
+  private calculateExcitement(features: any): number {
+    // High energy and amplitude suggest excitement
+    return Math.min(1, (features.amplitude + features.highFreqEnergy) / 100);
+  }
+
+  private calculateCalmness(features: any): number {
+    // Low variance and steady patterns suggest calmness
+    return Math.min(1, 1 - (features.variance / 1000));
+  }
+
+  private calculateStress(features: any): number {
+    // Combination of high variance and high frequency energy
+    return Math.min(1, (features.variance + features.highFreqEnergy) / 600);
+  }
+
+  private calculatePace(features: any): number {
+    // Based on length and energy patterns
+    return Math.min(1, features.length / 10000); // Simulated pace calculation
+  }
+
+  private calculateEnergy(features: any): number {
+    // Overall energy level
+    return Math.min(1, features.amplitude / 75);
+  }
+
+  private calculateClarity(features: any): number {
+    // Based on spectral characteristics
+    return Math.min(1, features.spectralRolloff);
   }
 }
 

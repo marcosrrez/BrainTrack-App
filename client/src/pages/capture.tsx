@@ -11,7 +11,9 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { MediaRecorderHelper, formatTime } from "@/lib/media-recorder";
+import { FacialEmotionDetector, type FacialAnalysis } from "@/lib/facial-emotion-detector";
 import { apiRequest } from "@/lib/queryClient";
 import { insertMemorySchema, type InsertMemory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +23,9 @@ import {
   Square, 
   Play, 
   Save,
-  FileText
+  FileText,
+  Brain,
+  Eye
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -48,6 +52,9 @@ export default function CapturePage() {
   const [videoData, setVideoData] = useState<string | null>(null);
   const [audioData, setAudioData] = useState<string | null>(null);
   const [hasVideoAccess, setHasVideoAccess] = useState(false);
+  const [facialAnalysis, setFacialAnalysis] = useState<FacialAnalysis | null>(null);
+  const [emotionDetector] = useState(() => new FacialEmotionDetector());
+  const [realTimeEmotions, setRealTimeEmotions] = useState<any[]>([]);
 
   const form = useForm<CaptureFormData>({
     resolver: zodResolver(insertMemorySchema.omit({ userId: true, videoData: true, audioData: true }).extend({
@@ -114,6 +121,18 @@ export default function CapturePage() {
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
+        
+        // Initialize facial emotion detection
+        try {
+          await emotionDetector.initialize(videoRef.current);
+          emotionDetector.startAnalysis((analysis) => {
+            setFacialAnalysis(analysis);
+            setRealTimeEmotions(prev => [...prev.slice(-10), analysis.emotions]); // Keep last 10 readings
+          });
+        } catch (emotionError) {
+          console.warn('Facial emotion detection failed:', emotionError);
+          // Continue without facial analysis
+        }
       }
     } catch (error) {
       toast({
@@ -128,10 +147,20 @@ export default function CapturePage() {
     mediaRecorderRef.current?.stopVideoRecording();
     setIsVideoRecording(false);
     
+    // Stop facial emotion detection
+    emotionDetector.stopAnalysis();
+    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
   };
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      emotionDetector.cleanup();
+    };
+  }, [emotionDetector]);
 
   const startAudioRecording = async () => {
     try {
@@ -223,6 +252,54 @@ export default function CapturePage() {
               
               {isVideoRecording && (
                 <Progress value={videoProgress} className="mb-4" />
+              )}
+
+              {/* Real-time emotion analysis */}
+              {facialAnalysis && isVideoRecording && (
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-4 w-4" />
+                    <span className="text-sm font-medium">AI Emotion Detection</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {facialAnalysis.detected ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  
+                  {facialAnalysis.detected && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Dominant Emotion:</span>
+                        <Badge variant="outline" className="capitalize">
+                          {facialAnalysis.emotions.dominantEmotion}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex justify-between">
+                          <span>Attention:</span>
+                          <span>{Math.round(facialAnalysis.attentionLevel * 100)}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Engagement:</span>
+                          <span>{Math.round(facialAnalysis.engagementScore * 100)}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-1 flex-wrap">
+                        {Object.entries(facialAnalysis.emotions)
+                          .filter(([key]) => !['dominantEmotion', 'confidence'].includes(key))
+                          .sort(([,a], [,b]) => b - a)
+                          .slice(0, 3)
+                          .map(([emotion, value]) => (
+                            <Badge key={emotion} variant="secondary" className="text-xs capitalize">
+                              {emotion}: {Math.round(value * 100)}%
+                            </Badge>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
               
               <div className="flex space-x-3">
