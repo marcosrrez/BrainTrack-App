@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --primary: hsl(239, 84%, 67%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(162, 73%, 46%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --accent: hsl(35, 91%, 62%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --chart-1: hsl(239, 84%, 67%);
+  --chart-2: hsl(162, 73%, 46%);
+  --chart-3: hsl(35, 91%, 62%);
+  --chart-4: hsl(0, 84.2%, 60.2%);
+  --chart-5: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Neutral palette matching design */
+  --neutral-50: hsl(210, 20%, 98%);
+  --neutral-100: hsl(220, 14%, 96%);
+  --neutral-200: hsl(220, 13%, 91%);
+  --neutral-300: hsl(216, 12%, 84%);
+  --neutral-400: hsl(218, 11%, 65%);
+  --neutral-500: hsl(220, 9%, 46%);
+  --neutral-600: hsl(215, 14%, 34%);
+  --neutral-700: hsl(217, 19%, 27%);
+  --neutral-800: hsl(215, 28%, 17%);
+  --neutral-900: hsl(221, 39%, 11%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(239, 84%, 67%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  /* Custom utility classes for the neutral palette */
+  .text-neutral-50 { color: var(--neutral-50); }
+  .text-neutral-100 { color: var(--neutral-100); }
+  .text-neutral-200 { color: var(--neutral-200); }
+  .text-neutral-300 { color: var(--neutral-300); }
+  .text-neutral-400 { color: var(--neutral-400); }
+  .text-neutral-500 { color: var(--neutral-500); }
+  .text-neutral-600 { color: var(--neutral-600); }
+  .text-neutral-700 { color: var(--neutral-700); }
+  .text-neutral-800 { color: var(--neutral-800); }
+  .text-neutral-900 { color: var(--neutral-900); }
+  
+  .bg-neutral-50 { background-color: var(--neutral-50); }
+  .bg-neutral-100 { background-color: var(--neutral-100); }
+  .bg-neutral-200 { background-color: var(--neutral-200); }
+  .bg-neutral-300 { background-color: var(--neutral-300); }
+  .bg-neutral-400 { background-color: var(--neutral-400); }
+  .bg-neutral-500 { background-color: var(--neutral-500); }
+  .bg-neutral-600 { background-color: var(--neutral-600); }
+  .bg-neutral-700 { background-color: var(--neutral-700); }
+  .bg-neutral-800 { background-color: var(--neutral-800); }
+  .bg-neutral-900 { background-color: var(--neutral-900); }
+  
+  .border-neutral-200 { border-color: var(--neutral-200); }
+  .border-neutral-300 { border-color: var(--neutral-300); }
+  
+  .hover\:bg-neutral-50:hover { background-color: var(--neutral-50); }
+  .hover\:bg-neutral-100:hover { background-color: var(--neutral-100); }
+  .hover\:text-neutral-800:hover { color: var(--neutral-800); }
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Media recording specific styles */
+.recording-indicator {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Mobile bottom padding for navigation */
+@media (max-width: 768px) {
+  .pb-mobile {
+    padding-bottom: 5rem;
+  }
+}
