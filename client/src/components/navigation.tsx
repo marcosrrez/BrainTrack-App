@@ -18,6 +18,16 @@ export function Navigation() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Enhanced scroll effect for navigation
+  useState(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  });
 
   const getInitials = (name: string) => {
     return name
@@ -43,15 +53,19 @@ export function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="bg-white shadow-sm border-b border-neutral-200">
+      <nav className={`bg-white border-b transition-all duration-300 ${
+        isScrolled 
+          ? 'shadow-lg border-neutral-200/80 backdrop-blur-sm bg-white/95' 
+          : 'shadow-sm border-neutral-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16"></div>
             <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-white" />
+              <div className="flex items-center space-x-3 group">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105 group-hover:shadow-md">
+                  <Brain className="w-4 h-4 text-white transition-transform duration-200 group-hover:rotate-12" />
                 </div>
-                <h1 className="text-xl font-bold text-neutral-800">MemoryBoost</h1>
+                <h1 className="text-xl font-bold text-neutral-800 transition-colors duration-200 group-hover:text-primary">MemoryBoost</h1>
               </div>
               <div className="hidden md:flex space-x-6">
                 {navItems.map((item) => {
@@ -59,10 +73,10 @@ export function Navigation() {
                   return (
                     <Link key={item.path} href={item.path}>
                       <button
-                        className={`flex items-center space-x-2 py-2 px-1 font-medium transition-colors ${
+                        className={`flex items-center space-x-2 py-2 px-3 font-medium rounded-md transition-all duration-200 relative ${
                           isActive(item.path)
-                            ? "text-primary border-b-2 border-primary"
-                            : "text-neutral-600 hover:text-neutral-800"
+                            ? "text-primary bg-primary/5 border-b-2 border-primary"
+                            : "text-neutral-600 hover:text-neutral-800 hover:bg-neutral-50"
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -74,19 +88,20 @@ export function Navigation() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="hover:bg-neutral-100 transition-all duration-200 relative">
                 <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
               </Button>
               <div className="flex items-center space-x-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-secondary text-white text-sm">
+                <Avatar className="w-8 h-8 transition-all duration-200 hover:scale-105 hover:shadow-md">
+                  <AvatarFallback className="bg-secondary text-white text-sm font-semibold">
                     {user ? getInitials(user.name) : "?"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-neutral-700 hidden sm:block">
+                <span className="text-sm font-medium text-neutral-700 hidden sm:block transition-colors duration-200 hover:text-neutral-800">
                   {user?.name}
                 </span>
-                <Button variant="ghost" size="sm" onClick={logout}>
+                <Button variant="ghost" size="sm" onClick={logout} className="hover:bg-destructive/10 hover:text-destructive transition-all duration-200">
                   Logout
                 </Button>
               </div>
@@ -105,10 +120,10 @@ export function Navigation() {
                         <Link key={item.path} href={item.path}>
                           <button
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`flex items-center space-x-3 w-full py-3 px-3 rounded-lg font-medium transition-colors ${
+                            className={`flex items-center space-x-3 w-full py-3 px-3 rounded-lg font-medium transition-all duration-200 ${
                               isActive(item.path)
-                                ? "bg-primary text-white"
-                                : "text-neutral-600 hover:bg-neutral-100"
+                                ? "bg-primary text-white shadow-md"
+                                : "text-neutral-600 hover:bg-neutral-100 hover:translate-x-1"
                             }`}
                           >
                             <Icon className="w-5 h-5" />
@@ -126,15 +141,17 @@ export function Navigation() {
       </nav>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden bg-white border-t border-neutral-200 fixed bottom-0 left-0 right-0 z-50">
-        <div className="flex justify-around py-2">
+      <div className="md:hidden bg-white/95 backdrop-blur-sm border-t border-neutral-200 fixed bottom-0 left-0 right-0 z-50 shadow-lg">
+        <div className="flex justify-around py-2 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link key={item.path} href={item.path}>
                 <button
-                  className={`flex flex-col items-center py-2 px-3 transition-colors ${
-                    isActive(item.path) ? "text-primary" : "text-neutral-600"
+                  className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
+                    isActive(item.path) 
+                      ? "text-primary bg-primary/10 scale-105" 
+                      : "text-neutral-600 hover:bg-neutral-100 active:scale-95"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
