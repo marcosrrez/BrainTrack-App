@@ -1,0 +1,173 @@
+Here's a rewritten prompt for Replit Agent to create the MemoryBoost Cognitive Enhancement Application from scratch, focusing on comprehensive functionality without specifying Firebase or other specific services. The prompt maintains the core structure, emphasizes incremental development, and provides clear, technology-agnostic instructions for the AI agent to implement the app.
+
+---
+
+**Prompt for Replit Agent: Build MemoryBoost Cognitive Enhancement Application**
+
+**Project Overview**: Develop a full-stack web application called "MemoryBoost," a cognitive enhancement tool inspired by neuroscience (e.g., HippoCamera model) to improve long-term memory through structured multimedia capture, spaced repetition reviews, and personalized analytics. Use modern web technologies and a scalable backend to ensure a robust, user-friendly experience.
+
+**Goal**: Create a responsive, feature-rich app that enables users to capture video and audio memories, review them using an intelligent spaced repetition system, and gain actionable insights to enhance memory retention.
+
+**Target Audience**: Students, professionals, and individuals seeking to improve episodic memory.
+
+**Technology Stack**:
+- **Frontend**: React (with a modern build tool like Vite), React Hooks for state management, a CSS framework (e.g., Tailwind CSS) for responsive styling, an icon library, a browser-based media recording API, and a charting library (e.g., Chart.js) for analytics.
+- **Backend**: A scalable server or serverless platform with:
+  - User authentication (email/password, social login).
+  - NoSQL database for structured data (user profiles, memory metadata, review history).
+  - Cloud storage for multimedia files (videos, audio).
+  - Serverless functions or API endpoints for business logic (e.g., spaced repetition, analytics).
+  - Hosting for the frontend.
+- **AI/External APIs**: Speech-to-text service for audio transcription, a lightweight NLP library or API for sentiment analysis and tagging.
+
+---
+
+### Instructions for Replit Agent
+
+Implement the app incrementally, starting with core features (authentication, memory capture, and storage) before adding advanced functionality (spaced repetition, AI enhancements, analytics). Follow React and backend best practices, prioritize security, and ensure responsiveness across devices. Provide clear comments for complex logic, implement robust error handling, and structure the project for easy deployment to a hosting platform.
+
+---
+
+### I. Project Setup & Core Structure
+
+1. **Initialize Project**:
+   - Set up a new React project using a modern build tool.
+   - Initialize a backend project with a scalable server or serverless platform.
+   - Install dependencies for:
+     - CSS framework for styling.
+     - Icon library for UI elements.
+     - Charting library for analytics.
+     - Libraries for routing and state management (if needed).
+
+2. **Styling Setup**:
+   - Configure the CSS framework to enable rapid, responsive UI development.
+   - Create a global stylesheet for consistent design.
+
+3. **Basic Layout & Navigation**:
+   - Build a responsive navigation bar with icons.
+   - Create main views/components: Dashboard, Capture, Review, Analytics.
+   - Implement client-side routing for seamless navigation.
+
+4. **User Authentication**:
+   - Implement authentication supporting email/password and social login (e.g., Google).
+   - Manage user state globally (e.g., using React Context or a state management library).
+   - Store user profiles in the database with fields: `userId`, `email`, `createdAt`.
+   - Enforce security rules: Users can only access their own profile data.
+   - Redirect unauthenticated users to a login/signup page.
+
+---
+
+### II. Memory Capture & Storage
+
+1. **Database Schema**:
+   - Create a `memories` collection or table with documents/records containing:
+     - `id` (auto-generated), `userId` (linked to user), `title` (String), `description` (String), `emotion` (Number, 1-10), `location` (String), `tags` (Array of Strings), `type` (String: 'personal', 'social', 'educational'), `createdAt` (Timestamp), `updatedAt` (Timestamp), `nextReview` (Timestamp for spaced repetition), `reviewCount` (Number), `lastScore` (Number), `videoUrl` (String, link to stored video), `audioUrl` (String, link to stored audio), `transcribedAudio` (String, AI transcription), `sentimentScore` (Number, AI-generated), `aiSuggestedTags` (Array of Strings, AI-generated).
+   - Enforce security rules: Users can only create, read, update, or delete their own memories.
+
+2. **Capture Component**:
+   - Use browser APIs to access camera and microphone for recording video (24 seconds) and audio (8 seconds).
+   - Display countdown timers and progress bars during recording.
+   - Allow users to preview recorded media before saving.
+   - Upload video and audio files to cloud storage, generating unique paths (e.g., `memories/{userId}/{memoryId}/{video|audio}`).
+   - Store the resulting URLs in the memory record.
+
+3. **Save Memory**:
+   - Save a new memory record in the database with user inputs (title, description, emotion, etc.) and media URLs.
+   - Set default values: `nextReview` (current time), `reviewCount` (0), `lastScore` (0).
+
+4. **AI Enhancements**:
+   - Implement a server-side function to transcribe audio using a speech-to-text API, updating the memory record with `transcribedAudio`.
+   - Perform client-side or server-side sentiment analysis on `description` and `transcribedAudio` using an NLP library/API, storing `sentimentScore` and generating `aiSuggestedTags`.
+
+---
+
+### III. Spaced Repetition & Review
+
+1. **Review View**:
+   - Query the database for memories where `userId` matches the current user and `nextReview` is less than or equal to the current time.
+   - Display a queue of memories due for review.
+
+2. **Review Interaction**:
+   - For each memory:
+     - Present active recall prompts (e.g., “What was the main emotion?”) before replay.
+     - Play the video (sped up) and audio simultaneously.
+     - After replay, show elaborative prompts (e.g., “What new details do you recall?”).
+     - Provide a text area for review notes, stored in a `reviewHistory` array or separate field.
+     - Offer scoring options: “Again” (0), “Hard” (1), “Good” (2), “Easy” (3).
+   - On score submission, call a server-side function to process the review.
+
+3. **Server-Side Review Processing**:
+   - Input: `memoryId`, `userId`, `score` (0-3).
+   - Action:
+     - Retrieve the memory record.
+     - Implement a spaced repetition algorithm (e.g., FSRS or similar) to calculate the new `nextReview` date based on `score`, `reviewCount`, and `lastScore`.
+     - Append to `reviewHistory`: `{ timestamp, score, interval }`.
+     - Update the memory record with new `nextReview`, `reviewCount`, `lastScore`.
+
+---
+
+### IV. Analytics & Insights
+
+1. **Analytics Storage**:
+   - Store aggregated metrics in a `userAnalytics` record per user, updated by a scheduled server-side function.
+   - Metrics include:
+     - Recall accuracy over time.
+     - Retention rates by `type`, `tags`, or `emotion`.
+     - Review consistency/streak.
+
+2. **Analytics Visualization**:
+   - Fetch the user’s analytics data and use a charting library to display trends (e.g., recall accuracy, retention rates).
+   - Show metrics like review streak and recall improvement.
+
+3. **AI-Driven Insights**:
+   - Implement a server-side function to analyze analytics data and generate personalized recommendations (e.g., “Add sensory details for low-recall social memories”).
+   - Store recommendations in the `userAnalytics` record.
+   - Display insights prominently in the Analytics view.
+
+---
+
+### V. User Experience Enhancements
+
+1. **Onboarding**:
+   - Create an interactive onboarding flow (modal or page) for first-time users, explaining the app’s purpose, neuroscience basis, and how to capture/review memories.
+
+2. **“On This Day” Feature**:
+   - On the Dashboard, query and display memories created on the current date in previous years.
+
+3. **Timeline View**:
+   - Build a scrollable, chronological view of all user memories, sorted by `createdAt`.
+   - Add filters for `type`, `tags`, or `location`.
+
+4. **Optional Atlas View**:
+   - If location data is structured, integrate a map library to display memory locations, with clustering for nearby memories.
+
+---
+
+### VI. Scalability, Security, & Performance
+
+1. **Security**:
+   - Implement strict access controls: Only authenticated users can access data, and users can only modify their own records.
+   - Test security rules thoroughly.
+
+2. **Performance**:
+   - Optimize frontend rendering (e.g., memoization in React).
+   - Create database indexes for frequent queries (e.g., by `userId` and `nextReview`).
+   - Optimize server-side functions for low latency.
+
+3. **Error Handling**:
+   - Add try-catch blocks for all backend and API interactions.
+   - Display user-friendly error messages in the UI.
+
+---
+
+### Agent Guidelines
+- **Incremental Development**: Start with authentication and memory capture, then implement review, analytics, and AI features.
+- **Best Practices**: Write clean, modular code with efficient database queries.
+- **Comments**: Document complex logic (e.g., spaced repetition algorithm, AI processing).
+- **Testing**: Add basic tests for authentication, memory saving, and review processing.
+- **Responsiveness**: Ensure the UI is mobile- and desktop-friendly using the CSS framework.
+- **Deployment**: Structure the project for deployment to a hosting platform, with clear build and deploy scripts.
+
+---
+
+This prompt is comprehensive yet technology-agnostic, focusing on functionality and user experience while giving the Replit Agent flexibility to choose appropriate services. Let me know if you need further adjustments or specific additions!
