@@ -30,6 +30,7 @@ export default function AuthPage() {
       email: "",
       password: "",
     },
+    mode: "onChange",
   });
 
   const onLogin = async (data: LoginInput) => {
@@ -126,76 +127,98 @@ export default function AuthPage() {
               </form>
             </Form>
           ) : (
-            <Form {...registerForm}>
-              <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                <FormField
-                  control={registerForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your full name" 
-                          {...field} 
-                          autoComplete="name"
-                          tabIndex={0}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={registerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your email" 
-                          {...field} 
-                          autoComplete="email"
-                          type="email"
-                          tabIndex={0}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={registerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Create a password" 
-                          {...field} 
-                          autoComplete="new-password"
-                          tabIndex={0}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
-                </Button>
-              </form>
-            </Form>
+            <div key="register-form">
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter your full name" 
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            autoComplete="name"
+                            tabIndex={0}
+                            disabled={field.disabled}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter your email" 
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            autoComplete="email"
+                            type="email"
+                            tabIndex={0}
+                            disabled={field.disabled}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Create a password" 
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            autoComplete="new-password"
+                            tabIndex={0}
+                            disabled={field.disabled}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Creating account..." : "Create Account"}
+                  </Button>
+                </form>
+              </Form>
+            </div>
           )}
           
           <div className="mt-6 text-center">
             <p className="text-neutral-600">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  // Reset forms when switching
+                  loginForm.reset();
+                  registerForm.reset();
+                }}
                 className="text-primary hover:underline font-medium"
               >
                 {isLogin ? "Sign up" : "Sign in"}
