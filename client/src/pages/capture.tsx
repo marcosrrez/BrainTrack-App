@@ -28,7 +28,8 @@ import {
   Brain,
   Eye,
   Target,
-  Shield
+  Shield,
+  Video
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
