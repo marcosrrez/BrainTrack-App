@@ -45,7 +45,7 @@ export default function CapturePage() {
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorderHelper | null>(null);
-  
+
   const [isVideoRecording, setIsVideoRecording] = useState(false);
   const [isAudioRecording, setIsAudioRecording] = useState(false);
   const [videoTime, setVideoTime] = useState(0);
@@ -114,13 +114,13 @@ export default function CapturePage() {
       await mediaRecorderRef.current?.startVideoRecording();
       setIsVideoRecording(true);
       setHasVideoAccess(true);
-      
+
       // Show video stream in preview
       const stream = mediaRecorderRef.current?.getVideoStream();
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
-        
+
         // Initialize facial emotion detection
         try {
           await emotionDetector.initialize(videoRef.current);
@@ -145,10 +145,10 @@ export default function CapturePage() {
   const stopVideoRecording = () => {
     mediaRecorderRef.current?.stopVideoRecording();
     setIsVideoRecording(false);
-    
+
     // Stop facial emotion detection
     emotionDetector.stopAnalysis();
-    
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -179,7 +179,19 @@ export default function CapturePage() {
     setIsAudioRecording(false);
   };
 
-  const onSubmit = (data: CaptureFormData) => {
+  const compressBlob = async (blob: Blob, maxSize: number = 10 * 1024 * 1024): Promise<Blob> => {
+    if (blob.size <= maxSize) return blob;
+
+    // For video/audio, we'll reduce quality
+    if (blob.type.startsWith('video/')) {
+      // Create a canvas to compress video (simplified approach)
+      return blob; // For now, return as-is
+    }
+
+    return blob;
+  };
+
+  const onSubmit = async (data: CaptureFormData) => {
     if (!videoData && !audioData) {
       toast({
         title: "No media recorded",
@@ -193,11 +205,54 @@ export default function CapturePage() {
       ? data.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
 
+
+    // Compress media files if they're too large
+    let processedAudioData = audioData;
+    let processedVideoData = videoData;
+	let audioBlob = null;
+	let videoBlob = null;
+
+	if(audioData){
+		audioBlob = await (await fetch(audioData)).blob()
+	}
+	if(videoData){
+		videoBlob = await (await fetch(videoData)).blob()
+	}
+
+
+    if (audioBlob && audioBlob.size > 10 * 1024 * 1024) { // 10MB limit
+      const processedAudioBlob = await compressBlob(audioBlob);
+      if (processedAudioBlob.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Audio file is too large. Please record a shorter clip.",
+          variant: "destructive",
+        });
+        return;
+      }
+	  processedAudioData = URL.createObjectURL(processedAudioBlob);
+    }
+
+    if (videoBlob && videoBlob.size > 20 * 1024 * 1024) { // 20MB limit
+      const processedVideoBlob = await compressBlob(videoBlob);
+      if (processedVideoBlob.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Video file is too large. Please record a shorter clip.",
+          variant: "destructive",
+        });
+        return;
+      }
+	   processedVideoData = URL.createObjectURL(processedVideoBlob);
+    }
+
+
+
     createMemoryMutation.mutate({
       ...data,
       tags,
-      videoData,
-      audioData,
+      videoData: processedVideoData,
+      audioData: processedAudioData,
     });
   };
 
@@ -231,7 +286,7 @@ export default function CapturePage() {
                   <span className="text-sm text-neutral-600">{formatTime(videoTime)}</span>
                 </div>
               </div>
-              
+
               <div className="relative bg-neutral-900 rounded-lg overflow-hidden mb-4" style={{ aspectRatio: "16/9" }}>
                 <video
                   ref={videoRef}
@@ -248,7 +303,7 @@ export default function CapturePage() {
                   </div>
                 )}
               </div>
-              
+
               {isVideoRecording && (
                 <Progress value={videoProgress} className="mb-4" />
               )}
@@ -263,7 +318,7 @@ export default function CapturePage() {
                       {facialAnalysis.detected ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                  
+
                   {facialAnalysis.detected && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -272,7 +327,7 @@ export default function CapturePage() {
                           {facialAnalysis.emotions.dominantEmotion}
                         </Badge>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="flex justify-between">
                           <span>Attention:</span>
@@ -283,7 +338,7 @@ export default function CapturePage() {
                           <span>{Math.round(facialAnalysis.engagementScore * 100)}%</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-1 flex-wrap">
                         {Object.entries(facialAnalysis.emotions)
                           .filter(([key]) => !['dominantEmotion', 'confidence'].includes(key))
@@ -300,7 +355,7 @@ export default function CapturePage() {
                   )}
                 </div>
               )}
-              
+
               <div className="flex space-x-3">
                 <Button
                   onClick={startVideoRecording}
@@ -334,7 +389,7 @@ export default function CapturePage() {
                   <span className="text-sm text-neutral-600">{formatTime(audioTime)}</span>
                 </div>
               </div>
-              
+
               <div className="bg-neutral-100 rounded-lg p-6 mb-4">
                 <div className="flex items-center justify-center mb-4">
                   <div className="w-16 h-16 bg-neutral-300 rounded-full flex items-center justify-center">
@@ -355,11 +410,11 @@ export default function CapturePage() {
                   ))}
                 </div>
               </div>
-              
+
               {isAudioRecording && (
                 <Progress value={audioProgress} className="mb-4" />
               )}
-              
+
               <div className="flex space-x-3">
                 <Button
                   onClick={startAudioRecording}

@@ -163,6 +163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/memories", requireAuth, async (req, res) => {
     try {
+      // Check request size
+      const requestSize = JSON.stringify(req.body).length;
+      if (requestSize > 50 * 1024 * 1024) { // 50MB limit
+        return res.status(413).json({ message: "Request too large. Please reduce file sizes." });
+      }
+
       const memoryData = insertMemorySchema.parse({
         ...req.body,
         userId: req.session.userId,
@@ -200,6 +206,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
+      }
+      if (error.type === 'entity.too.large') {
+        return res.status(413).json({ message: "Request too large. Please reduce file sizes." });
       }
       console.error('Memory creation error:', error);
       res.status(500).json({ message: "Failed to create memory" });
