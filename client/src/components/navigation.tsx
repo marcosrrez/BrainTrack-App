@@ -53,19 +53,19 @@ export function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className={`bg-white border-b transition-all duration-300 ${
+      <nav className={`bg-white/90 backdrop-blur-lg border-b transition-all duration-500 cubic-bezier(0.25, 0.46, 0.45, 0.94) ${
         isScrolled 
-          ? 'shadow-lg border-neutral-200/80 backdrop-blur-sm bg-white/95' 
-          : 'shadow-sm border-neutral-200'
+          ? 'shadow-xl border-neutral-200/60 bg-white/95' 
+          : 'shadow-lg border-neutral-200/40'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16"></div>
             <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3 group">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105 group-hover:shadow-md">
-                  <Brain className="w-4 h-4 text-white transition-transform duration-200 group-hover:rotate-12" />
+              <div className="flex items-center space-x-3 group magnetic-element">
+                <div className="w-9 h-9 apple-button rounded-xl flex items-center justify-center animate-breathe">
+                  <Brain className="w-5 h-5 text-white transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
                 </div>
-                <h1 className="text-xl font-bold text-neutral-800 transition-colors duration-200 group-hover:text-primary">MemoryBoost</h1>
+                <h1 className="text-xl font-bold text-neutral-800 transition-all duration-300 group-hover:text-primary color-moment-primary">MemoryBoost</h1>
               </div>
               <div className="hidden md:flex space-x-6">
                 {navItems.map((item) => {
@@ -73,10 +73,10 @@ export function Navigation() {
                   return (
                     <Link key={item.path} href={item.path}>
                       <button
-                        className={`flex items-center space-x-2 py-2 px-3 font-medium rounded-md transition-all duration-200 relative ${
+                        className={`flex items-center space-x-2 py-3 px-4 font-medium rounded-lg magnetic-element transition-all duration-300 relative touch-target ${
                           isActive(item.path)
-                            ? "text-primary bg-primary/5 border-b-2 border-primary"
-                            : "text-neutral-600 hover:text-neutral-800 hover:bg-neutral-50"
+                            ? "text-primary bg-primary/10 shadow-sm border-b-2 border-primary animate-soft-glow"
+                            : "text-neutral-600 hover:text-neutral-800 hover:bg-neutral-100/80"
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -88,13 +88,13 @@ export function Navigation() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="hover:bg-neutral-100 transition-all duration-200 relative">
+              <Button variant="ghost" size="sm" className="magnetic-element relative">
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-breathe"></span>
               </Button>
-              <div className="flex items-center space-x-2">
-                <Avatar className="w-8 h-8 transition-all duration-200 hover:scale-105 hover:shadow-md">
-                  <AvatarFallback className="bg-secondary text-white text-sm font-semibold">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-9 h-9 magnetic-element ring-2 ring-white shadow-lg">
+                  <AvatarFallback className="bg-gradient-to-br from-secondary to-emerald-600 text-white text-sm font-semibold">
                     {user ? getInitials(user.name) : "?"}
                   </AvatarFallback>
                 </Avatar>
@@ -141,17 +141,17 @@ export function Navigation() {
       </nav>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden bg-white/95 backdrop-blur-sm border-t border-neutral-200 fixed bottom-0 left-0 right-0 z-50 shadow-lg">
-        <div className="flex justify-around py-2 px-2">
+      <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-neutral-200/60 fixed bottom-0 left-0 right-0 z-50 shadow-2xl">
+        <div className="flex justify-around py-3 px-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link key={item.path} href={item.path}>
                 <button
-                  className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
+                  className={`flex flex-col items-center py-3 px-4 rounded-xl transition-all duration-300 min-w-[64px] touch-target ${
                     isActive(item.path) 
-                      ? "text-primary bg-primary/10 scale-105" 
-                      : "text-neutral-600 hover:bg-neutral-100 active:scale-95"
+                      ? "text-primary bg-primary/15 scale-105 shadow-lg animate-soft-glow" 
+                      : "text-neutral-600 hover:bg-neutral-100/80 active:scale-95 magnetic-element"
                   }`}
                 >
                   <Icon className="w-5 h-5" />

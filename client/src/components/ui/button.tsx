@@ -5,25 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transform active:scale-95",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium touch-target apple-focus relative overflow-hidden transition-all duration-300 cubic-bezier(0.25, 0.46, 0.45, 0.94) disabled:pointer-events-none disabled:opacity-50 transform active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:-translate-y-[1px]",
+        default: "apple-button text-white shadow-lg hover:shadow-xl",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-md hover:-translate-y-[1px]",
+          "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 hover:-translate-y-[1px]",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-primary/50 hover:shadow-sm",
+          "border border-neutral-200 bg-white/80 backdrop-blur-sm hover:bg-white hover:border-primary/30 hover:shadow-md magnetic-element",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md hover:-translate-y-[1px]",
-        ghost: "hover:bg-accent hover:text-accent-foreground hover:bg-neutral-100",
-        link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
+          "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-emerald-700 hover:-translate-y-[1px]",
+        ghost: "hover:bg-neutral-100/80 hover:backdrop-blur-sm magnetic-element",
+        link: "text-primary underline-offset-4 hover:underline hover:text-primary/80 color-moment-primary",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-11 px-6 py-3",
+        sm: "h-9 rounded-md px-4",
+        lg: "h-12 rounded-lg px-8 text-base",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {

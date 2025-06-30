@@ -66,16 +66,16 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 flex items-center justify-center p-6">
+      <Card className="w-full max-w-md shadow-2xl border-0">
+        <CardHeader className="text-center spacing-lg">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 apple-button rounded-2xl flex items-center justify-center animate-breathe shadow-xl">
+              <Brain className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MemoryBoost</CardTitle>
-          <p className="text-neutral-600">
+          <CardTitle className="text-display color-moment-primary mb-2">MemoryBoost</CardTitle>
+          <p className="text-neutral-600 text-base leading-relaxed px-2">
             Enhance your cognitive memory through structured capture and review
           </p>
         </CardHeader>
