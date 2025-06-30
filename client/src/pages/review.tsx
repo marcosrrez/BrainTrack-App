@@ -174,6 +174,23 @@ export default function ReviewPage() {
   const currentMemory = session.memories[session.currentIndex];
   const progress = ((session.currentIndex + 1) / session.memories.length) * 100;
 
+  // Add safety check for currentMemory
+  if (!currentMemory) {
+    return (
+      <div className="space-y-8 pb-20 md:pb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-800 mb-2">Memory Review</h1>
+          <p className="text-neutral-600">Loading memory...</p>
+        </div>
+        <Card>
+          <CardContent className="p-8">
+            <Skeleton className="h-48" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-20 md:pb-8">
       <div>
