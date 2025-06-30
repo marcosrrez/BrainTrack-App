@@ -11,7 +11,7 @@ import {
   Bell,
   Menu
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Navigation() {
@@ -21,13 +21,13 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Enhanced scroll effect for navigation
-  useState(() => {
+  React.useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  });
+  }, []);
 
   const getInitials = (name: string) => {
     return name
