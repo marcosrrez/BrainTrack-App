@@ -106,7 +106,7 @@ export function ProgressiveDisclosure({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Icon className="w-5 h-5 text-neutral-600" />
+                    {Icon && <Icon className="w-5 h-5 text-neutral-600" />}
                     <div>
                       <div className="flex items-center space-x-2">
                         <h4 className="font-medium text-neutral-800">{item.title}</h4>
