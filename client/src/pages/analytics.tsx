@@ -12,7 +12,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import type { UserAnalytics, Memory } from "@shared/schema";
-import { ProgressiveDisclosure } from "@/components/ProgressiveDisclosure";
+import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
 
 const analyticsEducationItems = [
   {
