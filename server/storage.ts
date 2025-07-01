@@ -36,14 +36,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...insertUser,
-        password: hashedPassword,
-      })
-      .returning();
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    } catch (hashError) {
+      console.error('Error hashing password:', hashError);
+      throw hashError;
+    }
+
+    let user;
+    try {
+      [user] = await db
+        .insert(users)
+        .values({
+          ...insertUser,
+          password: hashedPassword,
+        })
+        .returning();
+    } catch (dbError) {
+      console.error('Error inserting user into database:', dbError);
+      throw dbError;
+    }
 
     // Create initial analytics record
     await this.createUserAnalytics({ userId: user.id });
