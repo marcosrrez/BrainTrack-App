@@ -31,6 +31,7 @@ import {
   Shield,
   Video
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
 import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
 
@@ -44,6 +45,7 @@ interface CaptureFormData {
 }
 
 export default function CapturePage() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -344,6 +346,7 @@ export default function CapturePage() {
       tags,
       videoData: processedVideoData,
       audioData: processedAudioData,
+      userId: user!.id,
     });
   };
 

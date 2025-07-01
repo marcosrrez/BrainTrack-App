@@ -17,29 +17,54 @@ import {
 } from "lucide-react";
 import type { Memory, UserAnalytics } from "@shared/schema";
 import { getMemoriesOnThisDay } from "@/lib/spaced-repetition";
-import { ProgressiveDisclosure } from "@/components/progressive-disclosure"; // Ensure this component exists
+import { ProgressiveDisclosure, type DisclosureItem } from "@/components/progressive-disclosure"; // Ensure this component exists
 
 // Define educational items
-const dashboardEducationItems = [
+const dashboardEducationItems: DisclosureItem[] = [
   {
+    id: "welcome",
     title: "Welcome to MemoryBoost!",
     content: "MemoryBoost is designed to help you enhance your memory using spaced repetition and other techniques.",
+    preview: "Learn about MemoryBoost",
+    icon: Brain,
+    category: "feature-explanation",
+    importance: "high",
   },
   {
+    id: "spaced-repetition",
     title: "The Science of Spaced Repetition",
     content: "Spaced repetition involves reviewing information at increasing intervals. This technique leverages the forgetting curve to optimize memory retention.",
+    preview: "Learn about spaced repetition",
+    icon: Clock,
+    category: "memory-science",
+    importance: "high",
   },
   {
+    id: "data-usage",
     title: "How MemoryBoost Uses Your Data",
     content: "MemoryBoost analyzes your performance to personalize your review schedule. This ensures you review memories when they're most likely to be forgotten, maximizing learning efficiency.",
+    preview: "Learn about data usage",
+    icon: Target,
+    category: "data-usage",
+    importance: "high",
   },
   {
+    id: "tracking-progress",
     title: "Tracking Your Progress",
     content: "Monitor your review streak and accuracy rate to track your memory enhancement journey. Consistent effort leads to better results!",
+    preview: "Learn about progress tracking",
+    icon: TrendingUp,
+    category: "feature-explanation",
+    importance: "medium",
   },
   {
+    id: "capture-new-memories",
     title: "Capture New Memories Regularly",
     content: "The more memories you capture, the more you'll benefit from the spaced repetition system. Make it a habit to record new video and audio memories.",
+    preview: "Learn about capturing memories",
+    icon: Video,
+    category: "feature-explanation",
+    importance: "high",
   },
 ];
 

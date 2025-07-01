@@ -12,36 +12,71 @@ import {
   AlertCircle
 } from "lucide-react";
 import type { UserAnalytics, Memory } from "@shared/schema";
-import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
+import { ProgressiveDisclosure, type DisclosureItem } from "@/components/progressive-disclosure";
 
-const analyticsEducationItems = [
+const analyticsEducationItems: DisclosureItem[] = [
   {
+    id: "retention-rate",
     title: "Memory Retention Rate",
     content: "This metric shows the percentage of memories you're able to successfully recall over time. A higher retention rate indicates better memory performance.",
+    preview: "Learn about retention rates",
+    icon: Brain,
+    category: "memory-science",
+    importance: "high",
   },
   {
+    id: "review-consistency",
     title: "Review Consistency",
     content: "This reflects how regularly you engage with the app for memory reviews. Consistency is key to reinforcing memories and improving long-term retention.",
+    preview: "Learn about review consistency",
+    icon: Calendar,
+    category: "feature-explanation",
+    importance: "high",
   },
   {
+    id: "avg-recall-score",
     title: "Average Recall Score",
     content: "This is the average score you achieve on memory recall tests. It provides a snapshot of your overall memory strength.",
+    preview: "Learn about recall scores",
+    icon: Star,
+    category: "memory-science",
+    importance: "medium",
   },
   {
+    id: "ai-insights",
     title: "TensorFlow AI Insights",
     content: "Our AI algorithms analyze your memory patterns to provide personalized insights and recommendations for improvement.",
+    preview: "Learn about AI insights",
+    icon: Lightbulb,
+    category: "feature-explanation",
+    importance: "high",
   },
   {
+    id: "performance-by-category",
     title: "Performance by Category",
     content: "This shows how well you're performing in different categories of memories, helping you identify areas where you excel or need to focus more.",
+    preview: "Learn about category performance",
+    icon: Trophy,
+    category: "personalization",
+    importance: "medium",
   },
   {
+    id: "science-of-memory",
     title: "The Science of Memory",
     content: "Memory retention is influenced by factors like sleep, nutrition, and stress. Optimize these areas to enhance your memory performance.",
+    preview: "Learn about memory science",
+    icon: Brain,
+    category: "memory-science",
+    importance: "low",
   },
   {
+    id: "data-usage",
     title: "How We Use Your Data",
     content: "We use your data to personalize your learning experience, provide tailored insights, and improve our AI algorithms. Your data is kept secure and private.",
+    preview: "Learn about data usage",
+    icon: AlertCircle,
+    category: "data-usage",
+    importance: "high",
   },
 ];
 

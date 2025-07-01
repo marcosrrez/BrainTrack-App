@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      if (error.type === 'entity.too.large') {
+      if (error && typeof error === 'object' && 'type' in error && (error as { type: string }).type === 'entity.too.large') {
         return res.status(413).json({ message: "Request too large. Please reduce file sizes." });
       }
       console.error('Memory creation error:', error);

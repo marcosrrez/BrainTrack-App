@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,16 +135,17 @@ export default function ReviewPage() {
 
   const { data: dueMemories, isLoading } = useQuery<Memory[]>({
     queryKey: ["/api/memories/due"],
-    onSuccess: (data) => {
-      if (data && data.length > 0) {
-        setSession({
-          memories: data,
-          currentIndex: 0,
-          phase: 'pre-review',
-        });
-      }
-    },
   });
+
+  useEffect(() => {
+    if (dueMemories && dueMemories.length > 0) {
+      setSession({
+        memories: dueMemories,
+        currentIndex: 0,
+        phase: 'pre-review',
+      });
+    }
+  }, [dueMemories]);
 
   const submitReviewMutation = useMutation({
     mutationFn: async ({ memoryId, score, notes }: { memoryId: number; score: number; notes?: string }) => {
@@ -214,7 +215,7 @@ export default function ReviewPage() {
     );
   }
 
-  if (!dueMemories || dueMemories.length === 0) {
+  if (!dueMemories || (dueMemories as Memory[]).length === 0) {
     return (
       <div className="space-y-8 pb-20 md:pb-8">
         <div>

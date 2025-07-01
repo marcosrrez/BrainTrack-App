@@ -150,15 +150,14 @@ export function AIAnalysisDisplay({
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {Object.entries(emotionAnalysis.emotions)
-                  .sort(([,a], [,b]) => b - a)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
                   .slice(0, 4)
                   .map(([emotion, value]) => (
                     <div key={emotion} className="flex justify-between">
                       <span className="capitalize">{emotion}:</span>
-                      <span>{formatPercentage(value)}%</span>
+                      <span>{formatPercentage(value as number)}%</span>
                     </div>
-                  ))
-                }
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -207,14 +206,13 @@ export function AIAnalysisDisplay({
                 <span className="text-sm font-medium block mb-1">Tone Distribution</span>
                 <div className="flex gap-1 flex-wrap">
                   {Object.entries(voiceAnalysis.tone)
-                    .sort(([,a], [,b]) => b - a)
+                    .sort(([, a], [, b]) => (b as number) - (a as number))
                     .slice(0, 3)
                     .map(([tone, value]) => (
                       <Badge key={tone} variant="secondary" className="text-xs capitalize">
-                        {tone}: {formatPercentage(value)}%
+                        {tone}: {formatPercentage(value as number)}%
                       </Badge>
-                    ))
-                  }
+                    ))}
                 </div>
               </div>
             </CardContent>
@@ -255,16 +253,15 @@ export function AIAnalysisDisplay({
               <div>
                 <span className="text-sm font-medium block mb-1">Expression Mix</span>
                 <div className="flex gap-1 flex-wrap">
-                  {Object.entries(facialAnalysis.emotions)
-                    .filter(([key]) => !['dominantEmotion', 'confidence'].includes(key))
-                    .sort(([,a], [,b]) => b - a)
+                  {(Object.entries(facialAnalysis.emotions)
+                    .filter(([key]) => !['dominantEmotion', 'confidence'].includes(key)) as [string, number][])
+                    .sort(([, a], [, b]) => b - a)
                     .slice(0, 3)
                     .map(([emotion, value]) => (
                       <Badge key={emotion} variant="secondary" className="text-xs capitalize">
                         {emotion}: {formatPercentage(value)}%
                       </Badge>
-                    ))
-                  }
+                    ))}
                 </div>
               </div>
             </CardContent>

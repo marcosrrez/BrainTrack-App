@@ -19,7 +19,7 @@ import {
   Heart
 } from 'lucide-react';
 
-interface DisclosureItem {
+export interface DisclosureItem {
   id: string;
   title: string;
   preview: string;
