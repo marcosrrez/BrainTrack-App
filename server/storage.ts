@@ -52,7 +52,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword);
+    try {
+      return bcrypt.compare(password, hashedPassword);
+    } catch (error) {
+      console.error('Error in verifyPassword:', error);
+      throw error;
+    }
   }
 
   async getMemory(id: number): Promise<Memory | undefined> {
