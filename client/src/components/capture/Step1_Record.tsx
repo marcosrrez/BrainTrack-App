@@ -43,6 +43,7 @@ export function Step1_Record({ onNext }: Props) {
   const startRecording = async () => {
     try {
       await mediaRecorderRef.current?.startVideoRecording();
+      await mediaRecorderRef.current?.startAudioRecording();
       setIsRecording(true);
       setHasVideoAccess(true);
 

@@ -30,7 +30,7 @@ export class MediaRecorderHelper {
     try {
       this.videoStream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: false,
+        audio: true,
       });
 
       const chunks: Blob[] = [];
