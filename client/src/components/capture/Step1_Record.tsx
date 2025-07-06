@@ -77,8 +77,8 @@ export function Step1_Record({ onNext }: Props) {
   };
 
   useEffect(() => {
-    if (videoData && audioData) {
-      onNext(videoData, audioData, facialAnalysis);
+    if (videoData) {
+      onNext(videoData, audioData || '', facialAnalysis);
     }
   }, [videoData, audioData, facialAnalysis, onNext]);
 
