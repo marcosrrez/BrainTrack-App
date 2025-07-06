@@ -81,21 +81,11 @@ export class FacialEmotionDetector {
 
     this.onAnalysisCallback = callback;
     this.camera.start();
-
-    // Start periodic analysis
-    this.analysisInterval = setInterval(() => {
-      this.performEmotionAnalysis();
-    }, 1000); // Analyze every second
   }
 
   stopAnalysis(): void {
     if (this.camera) {
       this.camera.stop();
-    }
-    
-    if (this.analysisInterval) {
-      clearInterval(this.analysisInterval);
-      this.analysisInterval = null;
     }
     
     this.onAnalysisCallback = undefined;
@@ -327,10 +317,7 @@ export class FacialEmotionDetector {
     };
   }
 
-  private performEmotionAnalysis(): void {
-    // This method is called periodically to trigger analysis
-    // The actual analysis happens in onFaceMeshResults
-  }
+  
 
   cleanup(): void {
     this.stopAnalysis();
