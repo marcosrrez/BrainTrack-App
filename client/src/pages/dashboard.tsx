@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import type { Memory, UserAnalytics } from "@shared/schema";
 import { getMemoriesOnThisDay } from "@/lib/spaced-repetition";
-import { ProgressiveDisclosure, type DisclosureItem } from "@/components/progressive-disclosure"; // Ensure this component exists
+import { ProgressiveDisclosure, type DisclosureItem } from "@/components/progressive-disclosure";
+import { BedtimeReviewPrompt } from "@/components/BedtimeReviewPrompt";
+
 
 // Define educational items
 const dashboardEducationItems: DisclosureItem[] = [
@@ -64,6 +66,15 @@ const dashboardEducationItems: DisclosureItem[] = [
     preview: "Learn about capturing memories",
     icon: Video,
     category: "feature-explanation",
+    importance: "high",
+  },
+  {
+    id: "sleep-consolidation",
+    title: "Sleep for Memory Consolidation",
+    content: "Sleep plays a crucial role in memory consolidation, transforming new memories into long-term ones. Reviewing before sleep can enhance this process.",
+    preview: "Optimize memory with sleep",
+    icon: Clock,
+    category: "memory-science",
     importance: "high",
   },
 ];
@@ -227,6 +238,8 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        <BedtimeReviewPrompt />
       </div>
 
       {/* On This Day */}

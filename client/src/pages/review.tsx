@@ -10,9 +10,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { getReviewDifficulty } from "@/lib/spaced-repetition";
 import type { Memory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Play, 
-  RotateCcw, 
+import {
+  Play,
+  RotateCcw,
   CheckCircle,
   Lightbulb,
   Clock,
@@ -22,10 +22,13 @@ import {
 } from "lucide-react";
 import { ProgressiveDisclosure } from "@/components/progressive-disclosure";
 
+import { RetrievalPractice } from "@/components/RetrievalPractice";
+
 interface ReviewSession {
   memories: Memory[];
   currentIndex: number;
   phase: 'pre-review' | 'review' | 'completed';
+  retrievalAttempt: string | null;
 }
 
 export default function ReviewPage() {
@@ -38,6 +41,7 @@ export default function ReviewPage() {
     memories: [],
     currentIndex: 0,
     phase: 'pre-review',
+    retrievalAttempt: null,
   });
   
   const [reviewNotes, setReviewNotes] = useState("");
@@ -139,11 +143,15 @@ export default function ReviewPage() {
 
   useEffect(() => {
     if (dueMemories && dueMemories.length > 0) {
-      setSession({
-        memories: dueMemories,
+      // Shuffle the memories to introduce interleaving
+      const shuffledMemories = [...dueMemories].sort(() => Math.random() - 0.5);
+      setSession(prev => ({
+        ...prev,
+        memories: shuffledMemories,
         currentIndex: 0,
         phase: 'pre-review',
-      });
+        retrievalAttempt: null,
+      }));
     }
   }, [dueMemories]);
 
@@ -185,7 +193,11 @@ export default function ReviewPage() {
 
   const submitScore = (score: number) => {
     const currentMemory = session.memories[session.currentIndex];
-    const notes = [reviewNotes, elaborativeNotes].filter(Boolean).join('\n\n');
+    const notes = [
+      `Retrieval attempt: ${session.retrievalAttempt}`,
+      `Review notes: ${reviewNotes}`,
+      `Elaborative notes: ${elaborativeNotes}`,
+    ].filter(Boolean).join('\n\n');
     
     submitReviewMutation.mutate({
       memoryId: currentMemory.id,
@@ -307,44 +319,18 @@ export default function ReviewPage() {
       </Card>
 
       {/* Review Card */}
-      <Card>
-        {session.phase === 'pre-review' && (
-          <CardContent className="p-8">
-            <div className="text-center mb-8">
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">Memory Recall Challenge</h3>
-              <p className="text-neutral-600">Try to recall the details before viewing the memory</p>
-            </div>
+      {session.phase === 'pre-review' && (
+        <RetrievalPractice
+          memoryTitle={currentMemory.title}
+          onSubmit={(retrievalAttempt) => {
+            setSession(prev => ({ ...prev, phase: 'review', retrievalAttempt }));
+          }}
+        />
+      )}
 
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-neutral-50 rounded-lg p-6 mb-6">
-                <h4 className="font-medium text-neutral-800 mb-4">Before you watch, try to recall:</h4>
-                <ul className="space-y-2 text-neutral-700">
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <span>What was the main emotion you felt?</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <span>What was the key insight or takeaway?</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <span>Who was involved or what was the context?</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="text-center">
-                <Button onClick={startReview} size="lg">
-                  I'm Ready to Review
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        )}
-
-        {session.phase === 'review' && (
-          <>
+      {session.phase === 'review' && (
+        <>
+          <Card>
             {/* Memory Info */}
             <div className="bg-neutral-50 p-6 border-b border-neutral-200">
               <div className="flex items-center justify-between">
@@ -355,7 +341,7 @@ export default function ReviewPage() {
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className={`${currentMemory.type === 'personal' ? 'bg-blue-100 text-blue-800' : 
+                  <Badge className={`${currentMemory.type === 'personal' ? 'bg-blue-100 text-blue-800' :
                     currentMemory.type === 'social' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {currentMemory.type}
                   </Badge>
@@ -476,7 +462,7 @@ export default function ReviewPage() {
                       green: "bg-green-100 text-green-700 hover:bg-green-200",
                       blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
                     };
-                    
+
                     return (
                       <Button
                         key={score}
@@ -495,18 +481,16 @@ export default function ReviewPage() {
                 </div>
               </div>
             </CardContent>
-          </>
-        )}
-      </Card>
+          </Card>
 
-      {/* Educational Content - only show during review phase */}
-      {session.phase === 'review' && (
-        <ProgressiveDisclosure 
-          items={reviewEducationItems}
-          title="Review Science"
-          subtitle="Understanding the cognitive principles behind effective review"
-          maxInitialItems={1}
-        />
+          {/* Educational Content - only show during review phase */}
+          <ProgressiveDisclosure
+            items={reviewEducationItems}
+            title="Review Science"
+            subtitle="Understanding the cognitive principles behind effective review"
+            maxInitialItems={1}
+          />
+        </>
       )}
     </div>
   );

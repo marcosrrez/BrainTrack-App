@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { type NextFunction } from "express";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
 import { loginSchema, registerSchema, insertMemorySchema } from "@shared/schema";
@@ -68,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", async (req, res, next: NextFunction) => {
     try {
       const credentials = loginSchema.parse(req.body);
       
