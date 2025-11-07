@@ -28,6 +28,7 @@ export class FacialEmotionDetector {
   private videoElement: HTMLVideoElement | null = null;
   private onAnalysisCallback?: (analysis: FacialAnalysis) => void;
   private analysisInterval: NodeJS.Timeout | null = null;
+  private isCleanedUp = false;
 
   constructor() {
     this.faceMesh = null;
@@ -85,11 +86,16 @@ export class FacialEmotionDetector {
   }
 
   stopAnalysis(): void {
-    if (this.camera) {
-      this.camera.stop();
+    try {
+      if (this.camera) {
+        this.camera.stop();
+      }
+
+      // Clear callback to prevent memory leaks
+      this.onAnalysisCallback = undefined;
+    } catch (error) {
+      console.error('Error stopping analysis:', error);
     }
-    
-    this.onAnalysisCallback = undefined;
   }
 
   private onFaceMeshResults(results: any): void {
@@ -318,13 +324,83 @@ export class FacialEmotionDetector {
     };
   }
 
-  
 
+
+  /**
+   * Cleanup all resources to prevent memory leaks
+   * Safe to call multiple times (idempotent)
+   */
   cleanup(): void {
-    this.stopAnalysis();
-    if (this.faceMesh) {
-      this.faceMesh.close();
+    // Prevent multiple cleanup calls
+    if (this.isCleanedUp) {
+      return;
     }
-    this.isInitialized = false;
+
+    try {
+      // Stop any ongoing analysis
+      this.stopAnalysis();
+
+      // Stop and cleanup camera
+      if (this.camera) {
+        try {
+          this.camera.stop();
+        } catch (error) {
+          console.error('Error stopping camera:', error);
+        }
+      }
+
+      // Explicitly stop all video tracks from the video element
+      if (this.videoElement && this.videoElement.srcObject) {
+        try {
+          const stream = this.videoElement.srcObject as MediaStream;
+          const tracks = stream.getTracks();
+          tracks.forEach(track => {
+            try {
+              track.stop();
+              console.log(`Stopped track: ${track.kind}`);
+            } catch (error) {
+              console.error('Error stopping track:', error);
+            }
+          });
+          this.videoElement.srcObject = null;
+        } catch (error) {
+          console.error('Error stopping video tracks:', error);
+        }
+      }
+
+      // Cleanup MediaPipe FaceMesh resources
+      if (this.faceMesh) {
+        try {
+          this.faceMesh.close();
+          console.log('FaceMesh closed');
+        } catch (error) {
+          console.error('Error closing FaceMesh:', error);
+        }
+      }
+
+      // Clear intervals
+      if (this.analysisInterval) {
+        try {
+          clearInterval(this.analysisInterval);
+          this.analysisInterval = null;
+        } catch (error) {
+          console.error('Error clearing analysis interval:', error);
+        }
+      }
+
+      // Clear all references to prevent memory leaks
+      this.onAnalysisCallback = undefined;
+      this.faceMesh = null;
+      this.camera = null;
+      this.videoElement = null;
+      this.isInitialized = false;
+      this.isCleanedUp = true;
+
+      console.log('Facial emotion detector cleanup completed');
+    } catch (error) {
+      console.error('Error during facial emotion detector cleanup:', error);
+      // Still mark as cleaned up to prevent infinite loops
+      this.isCleanedUp = true;
+    }
   }
 }

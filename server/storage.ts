@@ -1,6 +1,6 @@
-import { users, memories, userAnalytics, type User, type InsertUser, type Memory, type InsertMemory, type UserAnalytics, type InsertUserAnalytics } from "@shared/schema";
+import { users, memories, userAnalytics, type User, type InsertUser, type Memory, type InsertMemory, type UserAnalytics, type InsertUserAnalytics, type PaginationParams, type PaginatedResponse } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -12,8 +12,8 @@ export interface IStorage {
 
   // Memory operations
   getMemory(id: number): Promise<Memory | undefined>;
-  getMemoriesByUser(userId: number): Promise<Memory[]>;
-  getMemoriesDueForReview(userId: number): Promise<Memory[]>;
+  getMemoriesByUser(userId: number, params?: PaginationParams): Promise<Memory[] | PaginatedResponse<Memory>>;
+  getMemoriesDueForReview(userId: number, limit?: number): Promise<Memory[]>;
   createMemory(memory: InsertMemory): Promise<Memory>;
   updateMemory(id: number, updates: Partial<Memory>): Promise<Memory | undefined>;
   deleteMemory(id: number): Promise<boolean>;
@@ -78,18 +78,52 @@ export class DatabaseStorage implements IStorage {
     return memory || undefined;
   }
 
-  async getMemoriesByUser(userId: number): Promise<Memory[]> {
-    return await db
+  async getMemoriesByUser(userId: number, params?: PaginationParams): Promise<Memory[] | PaginatedResponse<Memory>> {
+    // If no pagination params provided, return all memories (backward compatibility)
+    if (!params) {
+      return await db
+        .select()
+        .from(memories)
+        .where(eq(memories.userId, userId))
+        .orderBy(memories.createdAt);
+    }
+
+    // Apply pagination with limits
+    const limit = Math.min(params.limit || 50, 100); // Default 50, max 100
+    const offset = params.offset || 0;
+
+    // Get total count for pagination metadata (uses userId index)
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(memories)
+      .where(eq(memories.userId, userId));
+
+    // Get paginated results (uses userId and createdAt indexes)
+    const data = await db
       .select()
       .from(memories)
       .where(eq(memories.userId, userId))
-      .orderBy(memories.createdAt);
+      .orderBy(memories.createdAt)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      pagination: {
+        total: count,
+        limit,
+        offset,
+        hasMore: offset + limit < count,
+      },
+    };
   }
 
-  async getMemoriesDueForReview(userId: number): Promise<Memory[]> {
+  async getMemoriesDueForReview(userId: number, limit?: number): Promise<Memory[]> {
     const now = new Date();
     const { and, lte } = await import("drizzle-orm");
-    return await db
+
+    // Query uses composite index on (userId, nextReview) for optimal performance
+    const query = db
       .select()
       .from(memories)
       .where(and(
@@ -97,6 +131,13 @@ export class DatabaseStorage implements IStorage {
         lte(memories.nextReview, now)
       ))
       .orderBy(memories.nextReview);
+
+    // Apply limit if specified to prevent loading excessive data
+    if (limit) {
+      return await query.limit(limit);
+    }
+
+    return await query;
   }
 
   async createMemory(insertMemory: InsertMemory): Promise<Memory> {

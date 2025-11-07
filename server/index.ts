@@ -2,12 +2,49 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import * as dotenv from "dotenv";
+import helmet from "helmet";
+import { apiLimiter } from "./rate-limit";
+import "./config"; // Validate environment variables on startup
 
 dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+// SECURITY: Helmet adds various HTTP headers to protect against common vulnerabilities
+// - X-Content-Type-Options: Prevents MIME sniffing
+// - X-Frame-Options: Prevents clickjacking
+// - X-XSS-Protection: Enables browser XSS protection
+// - Strict-Transport-Security: Enforces HTTPS
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for Vite dev server compatibility
+  crossOriginEmbedderPolicy: false, // Disabled for external resources
+}));
+
+// SECURITY: Rate limiting for all API routes
+// Limits: 100 requests per 15 minutes per IP address
+app.use('/api', apiLimiter);
+
+// SECURITY: Set reasonable request size limits
+// Using 10MB as the default limit, which is sufficient for most operations
+// This prevents DOS attacks via large payload submissions
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Custom error handler for payload too large
+// This middleware catches JSON parsing errors including payload size errors
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      message: "Request payload too large. Maximum size is 10MB. Please reduce file sizes or compress your data."
+    });
+  }
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({
+      message: "Invalid JSON in request body. Please check your request format."
+    });
+  }
+  next(err);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

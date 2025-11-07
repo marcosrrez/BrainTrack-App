@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { type NextFunction } from "express";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
-import { loginSchema, registerSchema, insertMemorySchema, updateMemorySchema, reviewSchema } from "@shared/schema";
+import { loginSchema, registerSchema, insertMemorySchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -19,53 +19,6 @@ declare module 'express-session' {
 // Use PostgreSQL session store for production persistence
 // This replaces MemoryStore which loses all sessions on server restart
 const PgSession = connectPgSimple(session);
-
-/**
- * Format Zod validation errors into user-friendly messages
- * Returns all validation errors, not just the first one
- * @param error - Zod validation error
- * @returns Object containing error message and all validation errors
- */
-function formatZodError(error: z.ZodError): { message: string; errors: Array<{ field: string; message: string }> } {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.') || 'unknown',
-    message: err.message
-  }));
-
-  return {
-    message: errors.length === 1
-      ? errors[0].message
-      : `Validation failed: ${errors.length} error(s) found`,
-    errors
-  };
-}
-
-/**
- * Operational error types that should return 400-level status codes
- */
-interface OperationalError extends Error {
-  statusCode?: number;
-  isOperational?: boolean;
-}
-
-/**
- * Log error with context for debugging
- * Technical details are logged server-side only, never leaked to client
- * @param endpoint - API endpoint where error occurred
- * @param userId - User ID if available
- * @param error - The error object
- */
-function logError(endpoint: string, userId: number | undefined, error: unknown): void {
-  const timestamp = new Date().toISOString();
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  const errorStack = error instanceof Error ? error.stack : undefined;
-
-  console.error(`[${timestamp}] Error at ${endpoint}`, {
-    userId: userId || 'anonymous',
-    error: errorMessage,
-    stack: errorStack,
-  });
-}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // SECURITY: Session middleware with PostgreSQL persistence
@@ -190,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", authLimiter, async (req, res) => {
     try {
       const userData = registerSchema.parse(req.body);
-
+      
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
@@ -199,21 +152,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.createUser(userData);
       req.session.userId = user.id;
-
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        }
+      
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name 
+        } 
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const formatted = formatZodError(error);
-        return res.status(400).json(formatted);
+        return res.status(400).json({ message: error.errors[0].message });
       }
-      logError('/api/auth/register', undefined, error);
-      res.status(500).json({ message: "Registration failed. Please try again later." });
+      res.status(500).json({ message: "Registration failed" });
     }
   });
 
@@ -252,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", authLimiter, async (req, res, next: NextFunction) => {
     try {
       const credentials = loginSchema.parse(req.body);
-
+      
       const user = await storage.getUserByEmail(credentials.email);
       if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
@@ -264,18 +215,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        }
+      
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name 
+        } 
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const formatted = formatZodError(error);
-        return res.status(400).json(formatted);
+        return res.status(400).json({ message: error.errors[0].message });
       }
       next(error); // Pass error to general error handler
     }
@@ -299,8 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {
-        logError('/api/auth/logout', req.session?.userId, err);
-        return res.status(500).json({ message: "Logout failed. Please try again." });
+        return res.status(500).json({ message: "Logout failed" });
       }
       res.json({ message: "Logged out successfully" });
     });
@@ -335,12 +284,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "User not found" });
     }
 
-    res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name
-      }
+    res.json({ 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name 
+      } 
     });
   });
 
@@ -381,10 +330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate pagination parameters
       if (limit !== undefined && (isNaN(limit) || limit < 1)) {
-        return res.status(400).json({ message: "Limit must be a positive number" });
+        return res.status(400).json({ message: "Invalid limit parameter" });
       }
       if (offset !== undefined && (isNaN(offset) || offset < 0)) {
-        return res.status(400).json({ message: "Offset must be a non-negative number" });
+        return res.status(400).json({ message: "Invalid offset parameter" });
       }
 
       // If pagination params provided, return paginated response
@@ -397,8 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(memories);
       }
     } catch (error) {
-      logError('/api/memories', req.session.userId, error);
-      res.status(500).json({ message: "Unable to fetch memories. Please try again later." });
+      res.status(500).json({ message: "Failed to fetch memories" });
     }
   });
 
@@ -408,35 +356,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 
       if (limit !== undefined && (isNaN(limit) || limit < 1)) {
-        return res.status(400).json({ message: "Limit must be a positive number" });
+        return res.status(400).json({ message: "Invalid limit parameter" });
       }
 
       const memories = await storage.getMemoriesDueForReview(req.session.userId!, limit);
       res.json(memories);
     } catch (error) {
-      logError('/api/memories/due', req.session.userId, error);
-      res.status(500).json({ message: "Unable to fetch due memories. Please try again later." });
+      res.status(500).json({ message: "Failed to fetch due memories" });
     }
   });
 
   app.get("/api/memories/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid memory ID" });
-      }
-
       const memory = await storage.getMemory(id);
-
+      
       if (!memory || memory.userId !== req.session.userId) {
-        return res.status(404).json({ message: "Memory not found or you don't have permission to access it" });
+        return res.status(404).json({ message: "Memory not found" });
       }
 
       res.json(memory);
     } catch (error) {
-      logError(`/api/memories/${req.params.id}`, req.session.userId, error);
-      res.status(500).json({ message: "Unable to fetch memory. Please try again later." });
+      res.status(500).json({ message: "Failed to fetch memory" });
     }
   });
 
@@ -490,7 +431,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SECURITY: Rate limit memory creation to prevent abuse of expensive AI processing
   app.post("/api/memories", memoryCreationLimiter, requireAuth, async (req, res) => {
     try {
-      // Note: Request size validation is handled by express.json() middleware (10MB limit)
+      // Check request size
+      const requestSize = JSON.stringify(req.body).length;
+      if (requestSize > 50 * 1024 * 1024) { // 50MB limit
+        return res.status(413).json({ message: "Request too large. Please reduce file sizes." });
+      }
+
       const memoryData = insertMemorySchema.parse({
         ...req.body,
         userId: req.session.userId,
@@ -499,16 +445,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Analyze the memory content using TensorFlow AI
       const textAnalysis = await aiService.analyzeText(memoryData.description);
       const emotionAnalysis = await aiService.analyzeEmotion(memoryData.description, memoryData.emotion);
-
+      
       // Add voice analysis if audio data is present
       let voiceAnalysis = null;
       if (memoryData.audioData) {
-        try {
-          voiceAnalysis = await aiService.analyzeVoiceTone(memoryData.audioData);
-        } catch (voiceError) {
-          logError('/api/memories (voice analysis)', req.session.userId, voiceError);
-          // Continue without voice analysis if it fails
-        }
+        voiceAnalysis = await aiService.analyzeVoiceTone(memoryData.audioData);
       }
 
       // Enhance memory data with AI insights
@@ -520,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const memory = await storage.createMemory(enhancedMemoryData);
-
+      
       // Return memory with AI analysis
       res.json({
         ...memory,
@@ -532,77 +473,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const formatted = formatZodError(error);
-        return res.status(400).json(formatted);
+        return res.status(400).json({ message: error.errors[0].message });
       }
-      if (error instanceof Error && error.message.includes('AI service')) {
-        logError('/api/memories (AI service)', req.session.userId, error);
-        return res.status(503).json({
-          message: "AI analysis service is temporarily unavailable. Please try again later."
-        });
+      if (error && typeof error === 'object' && 'type' in error && (error as { type: string }).type === 'entity.too.large') {
+        return res.status(413).json({ message: "Request too large. Please reduce file sizes." });
       }
-      if (error instanceof Error && error.message.includes('database')) {
-        logError('/api/memories (database)', req.session.userId, error);
-        return res.status(503).json({
-          message: "Database error. Unable to save memory. Please try again later."
-        });
-      }
-      logError('/api/memories', req.session.userId, error);
-      res.status(500).json({ message: "Unable to create memory. Please try again later." });
+      console.error('Memory creation error:', error);
+      res.status(500).json({ message: "Failed to create memory" });
     }
   });
 
   app.put("/api/memories/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid memory ID" });
-      }
-
       const memory = await storage.getMemory(id);
-
+      
       if (!memory || memory.userId !== req.session.userId) {
-        return res.status(404).json({ message: "Memory not found or you don't have permission to update it" });
+        return res.status(404).json({ message: "Memory not found" });
       }
 
-      // Validate and whitelist updates using schema
-      const validatedUpdates = updateMemorySchema.parse(req.body);
-      const updatedMemory = await storage.updateMemory(id, validatedUpdates);
+      const updates = req.body;
+      const updatedMemory = await storage.updateMemory(id, updates);
       res.json(updatedMemory);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        const formatted = formatZodError(error);
-        return res.status(400).json(formatted);
-      }
-      logError(`/api/memories/${req.params.id}`, req.session.userId, error);
-      res.status(500).json({ message: "Unable to update memory. Please try again later." });
+      res.status(500).json({ message: "Failed to update memory" });
     }
   });
 
   app.delete("/api/memories/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid memory ID" });
-      }
-
       const memory = await storage.getMemory(id);
-
+      
       if (!memory || memory.userId !== req.session.userId) {
-        return res.status(404).json({ message: "Memory not found or you don't have permission to delete it" });
+        return res.status(404).json({ message: "Memory not found" });
       }
 
       const success = await storage.deleteMemory(id);
       if (success) {
         res.json({ message: "Memory deleted successfully" });
       } else {
-        res.status(500).json({ message: "Failed to delete memory. Please try again." });
+        res.status(500).json({ message: "Failed to delete memory" });
       }
     } catch (error) {
-      logError(`/api/memories/${req.params.id}/delete`, req.session.userId, error);
-      res.status(500).json({ message: "Unable to delete memory. Please try again later." });
+      res.status(500).json({ message: "Failed to delete memory" });
     }
   });
 
@@ -610,43 +524,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/memories/:id/review", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid memory ID" });
-      }
-
-      // Validate review data with schema
-      const reviewData = reviewSchema.parse(req.body);
-      const { score, notes } = reviewData;
-
+      const { score, notes } = req.body;
+      
       const memory = await storage.getMemory(id);
       if (!memory || memory.userId !== req.session.userId) {
-        return res.status(404).json({ message: "Memory not found or you don't have permission to review it" });
+        return res.status(404).json({ message: "Memory not found" });
       }
 
       // Calculate next review date using AI-optimized spaced repetition
       const now = new Date();
       const reviewCount = memory.reviewCount + 1;
-
+      
       // Get user analytics for AI optimization
       const userAnalytics = await storage.getUserAnalytics(req.session.userId!);
-      if (!userAnalytics) {
-        logError(`/api/memories/${id}/review (analytics missing)`, req.session.userId, new Error('User analytics not found'));
-        return res.status(500).json({
-          message: "Unable to calculate review interval. Please try again later."
-        });
-      }
-
+      
       // Use TensorFlow AI to optimize the review interval
-      let optimizedInterval;
-      try {
-        optimizedInterval = await aiService.optimizeReviewInterval(memory, userAnalytics);
-      } catch (aiError) {
-        logError(`/api/memories/${id}/review (AI optimization)`, req.session.userId, aiError);
-        // Fallback to default spaced repetition if AI fails
-        optimizedInterval = Math.min(30, Math.max(1, reviewCount * 2));
-      }
-
+      const optimizedInterval = await aiService.optimizeReviewInterval(memory, userAnalytics);
+      
       // Apply the AI-optimized interval with score adjustment
       let intervalDays = optimizedInterval;
       switch (score) {
@@ -687,14 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedMemory);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        const formatted = formatZodError(error);
-        return res.status(400).json(formatted);
-      }
-      logError(`/api/memories/${req.params.id}/review`, req.session.userId, error);
-      res.status(500).json({
-        message: "Unable to submit review. Your progress was not saved. Please try again."
-      });
+      res.status(500).json({ message: "Failed to submit review" });
     }
   });
 
@@ -703,29 +590,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const analytics = await storage.getUserAnalytics(req.session.userId!);
       if (!analytics) {
-        return res.status(404).json({
-          message: "Analytics data not found. This may be because you haven't created any memories yet."
-        });
+        return res.status(404).json({ message: "Analytics not found" });
       }
 
       // Get user memories for AI analysis
       const memories = await storage.getMemoriesByUser(req.session.userId!);
-
+      
       // Generate AI-powered insights
-      let aiInsights;
-      try {
-        aiInsights = await aiService.generateInsights(memories, analytics);
-      } catch (aiError) {
-        logError('/api/analytics (AI insights)', req.session.userId, aiError);
-        // Return analytics without AI insights if generation fails
-        return res.json({
-          ...analytics,
-          aiInsights: null,
-          aiGeneratedAt: new Date(),
-          aiError: "AI insights temporarily unavailable"
-        });
-      }
-
+      const aiInsights = await aiService.generateInsights(memories, analytics);
+      
       // Enhanced analytics with AI insights
       const enhancedAnalytics = {
         ...analytics,
@@ -735,15 +608,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(enhancedAnalytics);
     } catch (error) {
-      logError('/api/analytics', req.session.userId, error);
-      if (error instanceof Error && error.message.includes('database')) {
-        return res.status(503).json({
-          message: "Database error. Unable to fetch analytics. Please try again later."
-        });
-      }
-      res.status(500).json({
-        message: "Unable to fetch analytics data. Please try again later."
-      });
+      console.error('Analytics error:', error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
 
@@ -751,29 +617,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/memories/:id/similar", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid memory ID" });
-      }
-
       const targetMemory = await storage.getMemory(id);
-
+      
       if (!targetMemory || targetMemory.userId !== req.session.userId) {
-        return res.status(404).json({ message: "Memory not found or you don't have permission to access it" });
+        return res.status(404).json({ message: "Memory not found" });
       }
 
       const allMemories = await storage.getMemoriesByUser(req.session.userId!);
       const similarMemories = await aiService.findSimilarMemories(targetMemory, allMemories);
-
+      
       res.json(similarMemories);
     } catch (error) {
-      logError(`/api/memories/${req.params.id}/similar`, req.session.userId, error);
-      if (error instanceof Error && error.message.includes('AI service')) {
-        return res.status(503).json({
-          message: "AI similarity service is temporarily unavailable. Please try again later."
-        });
-      }
-      res.status(500).json({ message: "Unable to find similar memories. Please try again later." });
+      console.error('Similar memories error:', error);
+      res.status(500).json({ message: "Failed to find similar memories" });
     }
   });
 
@@ -781,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function updateUserAnalyticsAfterReview(userId: number) {
     const memories = await storage.getMemoriesByUser(userId);
     const dueMemories = await storage.getMemoriesDueForReview(userId);
-
+    
     // Calculate accuracy rate
     const reviewedMemories = memories.filter(m => m.reviewCount > 0);
     const totalReviews = reviewedMemories.reduce((sum, m) => sum + m.reviewCount, 0);
@@ -789,11 +645,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const history = Array.isArray(m.reviewHistory) ? m.reviewHistory : [];
       return sum + history.filter((r: any) => r.score >= 2).length;
     }, 0);
-
+    
     const accuracyRate = totalReviews > 0 ? (goodReviews / totalReviews) * 100 : 0;
-
+    
     // Calculate average recall score
-    const avgRecallScore = totalReviews > 0 ?
+    const avgRecallScore = totalReviews > 0 ? 
       reviewedMemories.reduce((sum, m) => sum + (m.lastScore || 0), 0) / reviewedMemories.length : 0;
 
     await storage.updateUserAnalytics(userId, {
@@ -804,51 +660,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  /**
-   * Global error handling middleware
-   * Differentiates between operational errors (400-level) and bugs (500-level)
-   * Logs errors with proper context and never leaks sensitive info
-   */
+  // General error handling middleware
   app.use((err: any, req: any, res: any, next: any) => {
-    // Determine if this is an operational error or a bug
-    const isOperational = err.isOperational ||
-                         err.statusCode < 500 ||
-                         err instanceof z.ZodError;
-
-    // Log with appropriate severity
-    if (isOperational) {
-      logError(req.path, req.session?.userId, err);
-    } else {
-      // For bugs (500-level errors), log with more detail
-      console.error('[CRITICAL] Unhandled server error:', {
-        timestamp: new Date().toISOString(),
-        userId: req.session?.userId || 'anonymous',
-        endpoint: req.path,
-        method: req.method,
-        error: err.message,
-        stack: err.stack,
-      });
-    }
-
-    // Determine status code
-    const statusCode = err.statusCode || err.status || 500;
-
-    // Never leak sensitive information in error messages
-    let message = "An unexpected error occurred";
-    if (isOperational && err.message) {
-      message = err.message;
-    } else if (statusCode === 500) {
-      message = "Internal server error. Our team has been notified.";
-    }
-
-    // Send error response
-    res.status(statusCode).json({
-      message,
-      ...(process.env.NODE_ENV === 'development' && {
-        stack: err.stack,
-        details: err
-      })
-    });
+    console.error('Unhandled server error:', err);
+    res.status(500).json({ message: "An unexpected server error occurred." });
   });
 
   const httpServer = createServer(app);
