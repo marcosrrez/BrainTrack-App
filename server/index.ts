@@ -10,6 +10,11 @@ dotenv.config();
 
 const app = express();
 
+// PRODUCTION: Trust Railway proxy (required for rate limiting to work correctly)
+// Railway sits behind a proxy that sets X-Forwarded-For headers
+// Without this, express-rate-limit cannot identify unique users
+app.set('trust proxy', true);
+
 // SECURITY: Helmet adds various HTTP headers to protect against common vulnerabilities
 // - X-Content-Type-Options: Prevents MIME sniffing
 // - X-Frame-Options: Prevents clickjacking
