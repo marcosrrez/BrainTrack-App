@@ -8,13 +8,6 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export let pool: Pool;
-export let db: ReturnType<typeof drizzle>;
-
-try {
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle(pool, { schema });
-} catch (error) {
-  console.error("Database connection error:", error);
-  throw error; // Re-throw to ensure the process still exits if connection fails
-}
+// Initialize pool and db outside try-catch for proper export
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle(pool, { schema });
